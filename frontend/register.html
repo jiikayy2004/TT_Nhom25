@@ -281,18 +281,4 @@
     </script>
 </body>
 </html>
-                passwordConfirm: document.getElementById('passwordConfirm').value
-            };
 
-            try {
-                await registerUser(formData);
-                document.getElementById('message').style.color = 'green';
-                document.getElementById('message').textContent = 'Registration successful!';
-            } catch (error) {
-                document.getElementById('message').style.color = 'red';
-                document.getElementById('message').textContent = error.message;
-            }
-        });
-    </script>
-</body>
-</html>
