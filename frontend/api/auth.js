@@ -16,7 +16,15 @@ async function register(formData) {
             body: JSON.stringify(formData)
         });
 
-        const data = await response.json();
+        // Parse JSON only when appropriate; otherwise read text for friendly messages
+        let data = {};
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+            data = await response.json();
+        } else {
+            const text = await response.text();
+            data = { message: text };
+        }
 
         if (!response.ok) {
             throw {
@@ -26,11 +34,7 @@ async function register(formData) {
             };
         }
 
-        // Save auth data
-        if (data.token && data.user) {
-            window.Auth.saveAuthData(data.user, data.token);
-        }
-
+        // Do NOT auto-save auth data on registration. Redirecting to login gives clearer UX.
         return {
             success: true,
             message: data.message || 'Registration successful',

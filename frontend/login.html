@@ -180,21 +180,14 @@
             if (result.success) {
                 successMsg.classList.add('show');
                 setTimeout(() => {
-                    window.location.href = './dashboard.html';
-                }, 1500);
+                    window.location.href = './index.html';
+                }, 1200);
             } else {
                 btnText.style.display = 'inline';
                 btnLoading.classList.remove('show');
                 form.querySelector('button').disabled = false;
 
                 showError('email', result.message || 'Email hoặc mật khẩu không chính xác');
-            }
-        });
-    </script>
-</body>
-</html>            } catch (error) {
-                document.getElementById('message').style.color = 'red';
-                document.getElementById('message').textContent = error.message;
             }
         });
     </script>
