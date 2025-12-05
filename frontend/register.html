@@ -10,7 +10,15 @@
     <link rel="stylesheet" href="./assets/css/style.css">
     <link rel="stylesheet" href="./assets/css/responsive.css">
     
-    
+    <style>
+        .error-message { color: #e74c3c; font-size: 0.85rem; margin-top: 0.3rem; display: none; }
+        .error-message.show { display: block; }
+        .input-error { border-color: #e74c3c !important; }
+        .success-message { color: #27ae60; font-size: 0.9rem; margin-bottom: 1rem; display: none; }
+        .success-message.show { display: block; }
+        .loading { display: none; }
+        .loading.show { display: inline-block; }
+    </style>
 </head>
 <body>
 
@@ -21,51 +29,59 @@
                 <p>Tạo tài khoản 920 GYM của bạn</p>
             </div>
 
-            <form>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="firstname">Tên</label>
-                        <input type="text" id="firstname" placeholder="Nhập tên" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="lastname">Họ</label>
-                        <input type="text" id="lastname" placeholder="Nhập họ" required>
-                    </div>
+            <div id="successMessage" class="success-message">
+                <i class="fas fa-check-circle"></i> Đăng kí thành công! Đang chuyển hướng...
+            </div>
+
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="name">Họ và Tên</label>
+                    <input type="text" id="name" name="name" placeholder="Nhập họ và tên" required>
+                    <div class="error-message" id="nameError"></div>
                 </div>
 
                 <div class="form-group">
                     <label for="email">Email</label>
-                    <input type="email" id="email" placeholder="Nhập email" required>
+                    <input type="email" id="email" name="email" placeholder="Nhập email" required>
+                    <div class="error-message" id="emailError"></div>
                 </div>
 
                 <div class="form-group">
                     <label for="phone">Số điện thoại</label>
-                    <input type="tel" id="phone" placeholder="Nhập số điện thoại" required>
+                    <input type="tel" id="phone" name="phone" placeholder="Nhập số điện thoại" required>
+                    <div class="error-message" id="phoneError"></div>
                 </div>
 
                 <div class="form-group">
                     <label for="username">Tên đăng nhập</label>
-                    <input type="text" id="username" placeholder="Nhập tên đăng nhập" required>
+                    <input type="text" id="username" name="username" placeholder="Nhập tên đăng nhập" required>
+                    <div class="error-message" id="usernameError"></div>
                 </div>
 
                 <div class="form-group">
                     <label for="password">Mật khẩu</label>
-                    <input type="password" id="password" placeholder="Nhập mật khẩu (tối thiểu 8 ký tự)" required>
+                    <input type="password" id="password" name="password" placeholder="Nhập mật khẩu (tối thiểu 6 ký tự)" required minlength="6">
+                    <div class="error-message" id="passwordError"></div>
                 </div>
 
                 <div class="form-group">
                     <label for="confirm-password">Xác nhận mật khẩu</label>
-                    <input type="password" id="confirm-password" placeholder="Xác nhận mật khẩu" required>
+                    <input type="password" id="confirm-password" name="confirm-password" placeholder="Xác nhận mật khẩu" required>
+                    <div class="error-message" id="confirmError"></div>
                 </div>
 
                 <div class="terms">
-                    <input type="checkbox" id="terms" required>
+                    <input type="checkbox" id="terms" name="terms" required>
                     <label for="terms">
                         Tôi đồng ý với <a href="#">Điều khoản dịch vụ</a> và <a href="#">Chính sách bảo mật</a>
                     </label>
+                    <div class="error-message" id="termsError"></div>
                 </div>
 
-                <button type="submit" class="register-btn">Đăng Kí</button>
+                <button type="submit" class="register-btn">
+                    <span id="btnText">Đăng Kí</span>
+                    <span id="btnLoading" class="loading"><i class="fas fa-spinner fa-spin"></i></span>
+                </button>
             </form>
 
             <div class="register-divider">
@@ -91,6 +107,192 @@
         </div>
     </div>
 
+    <script src="./assets/js/config.js"></script>
+    <script src="./assets/js/auth.js"></script>
+    <script src="./api/auth.js"></script>
     <script src="./js/load-components.js"></script>
+
+    <script>
+        const form = document.getElementById('registerForm');
+        const successMsg = document.getElementById('successMessage');
+        const btnText = document.getElementById('btnText');
+        const btnLoading = document.getElementById('btnLoading');
+
+        // Clear error messages
+        function clearErrors() {
+            document.querySelectorAll('.error-message').forEach(el => {
+                el.classList.remove('show');
+            });
+            document.querySelectorAll('input').forEach(el => {
+                el.classList.remove('input-error');
+            });
+        }
+
+        // Show field error
+        function showError(fieldId, message) {
+            const input = document.getElementById(fieldId);
+            const errorEl = document.getElementById(fieldId + 'Error');
+            if (input && errorEl) {
+                input.classList.add('input-error');
+                errorEl.textContent = message;
+                errorEl.classList.add('show');
+            }
+        }
+
+        // Validate form
+        function validateForm() {
+            clearErrors();
+            let valid = true;
+
+            const name = document.getElementById('name').value.trim();
+            if (!name) {
+                showError('name', 'Vui lòng nhập họ và tên');
+                valid = false;
+            }
+
+            const email = document.getElementById('email').value.trim();
+            if (!email) {
+                showError('email', 'Vui lòng nhập email');
+                valid = false;
+            } else if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+                showError('email', 'Email không hợp lệ');
+                valid = false;
+            }
+
+            const phone = document.getElementById('phone').value.trim();
+            if (!phone) {
+                showError('phone', 'Vui lòng nhập số điện thoại');
+                valid = false;
+            } else if (!phone.match(/^[\d\+\-\s\(\)]{10,}$/)) {
+                showError('phone', 'Số điện thoại không hợp lệ');
+                valid = false;
+            }
+
+            const username = document.getElementById('username').value.trim();
+            if (!username) {
+                showError('username', 'Vui lòng nhập tên đăng nhập');
+                valid = false;
+            } else if (username.length < 3) {
+                showError('username', 'Tên đăng nhập ít nhất 3 ký tự');
+                valid = false;
+            }
+
+            const password = document.getElementById('password').value;
+            if (!password) {
+                showError('password', 'Vui lòng nhập mật khẩu');
+                valid = false;
+            } else if (password.length < 6) {
+                showError('password', 'Mật khẩu ít nhất 6 ký tự');
+                valid = false;
+            }
+
+            const confirmPassword = document.getElementById('confirm-password').value;
+            if (!confirmPassword) {
+                showError('confirm-password', 'Vui lòng xác nhận mật khẩu');
+                valid = false;
+            } else if (password !== confirmPassword) {
+                showError('confirm-password', 'Mật khẩu không khớp');
+                valid = false;
+            }
+
+            if (!document.getElementById('terms').checked) {
+                showError('terms', 'Vui lòng chấp nhận điều khoản dịch vụ');
+                valid = false;
+            }
+
+            return valid;
+        }
+
+        // Handle form submit
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!validateForm()) {
+                return;
+            }
+
+            // Show loading
+            btnText.style.display = 'none';
+            btnLoading.classList.add('show');
+            form.querySelector('button').disabled = true;
+
+            const formData = {
+                name: document.getElementById('name').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                phone: document.getElementById('phone').value.trim(),
+                username: document.getElementById('username').value.trim(),
+                password: document.getElementById('password').value
+            };
+
+            const result = await window.AuthAPI.register(formData);
+
+            if (result.success) {
+                successMsg.classList.add('show');
+                setTimeout(() => {
+                    window.location.href = './login.html?message=registered';
+                }, 1500);
+            } else {
+                btnText.style.display = 'inline';
+                btnLoading.classList.remove('show');
+                form.querySelector('button').disabled = false;
+
+                // Show errors
+                if (result.errors) {
+                    Object.keys(result.errors).forEach(field => {
+                        const errorMsg = Array.isArray(result.errors[field]) 
+                            ? result.errors[field][0] 
+                            : result.errors[field];
+                        showError(field, errorMsg);
+                    });
+                } else {
+                    alert(result.message);
+                }
+            }
+        });
+
+        // Real-time validation
+        document.getElementById('email').addEventListener('blur', function() {
+            const email = this.value.trim();
+            if (email && email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+                window.AuthAPI.checkEmailExists(email).then(exists => {
+                    if (exists) {
+                        showError('email', 'Email này đã được đăng ký');
+                    } else {
+                        this.classList.remove('input-error');
+                        document.getElementById('emailError').classList.remove('show');
+                    }
+                });
+            }
+        });
+
+        document.getElementById('username').addEventListener('blur', function() {
+            const username = this.value.trim();
+            if (username && username.length >= 3) {
+                window.AuthAPI.checkUsernameExists(username).then(exists => {
+                    if (exists) {
+                        showError('username', 'Tên đăng nhập này đã được sử dụng');
+                    } else {
+                        this.classList.remove('input-error');
+                        document.getElementById('usernameError').classList.remove('show');
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
+                passwordConfirm: document.getElementById('passwordConfirm').value
+            };
+
+            try {
+                await registerUser(formData);
+                document.getElementById('message').style.color = 'green';
+                document.getElementById('message').textContent = 'Registration successful!';
+            } catch (error) {
+                document.getElementById('message').style.color = 'red';
+                document.getElementById('message').textContent = error.message;
+            }
+        });
+    </script>
 </body>
 </html>
