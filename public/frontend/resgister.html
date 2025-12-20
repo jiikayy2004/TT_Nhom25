@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Ký Hội Viên</title>
+    <style>
+        body { font-family: sans-serif; background: #f4f4f4; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .register-box { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); width: 400px; }
+        input { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin-top: 10px; }
+        button:hover { background: #218838; }
+        .link { text-align: center; margin-top: 15px; font-size: 14px; }
+        #result { margin-top: 20px; padding: 10px; border-radius: 4px; display: none; }
+        .error { color: red; background: #ffe6e6; border: 1px solid red; }
+        .success { color: green; background: #e6ffe6; border: 1px solid green; }
+    </style>
+</head>
+<body>
+
+    <div class="register-box">
+        <h2 style="text-align: center;">Đăng Ký Hội Viên</h2>
+        
+        <form id="registerForm">
+            <label>Họ và tên:</label>
+            <input type="text" id="name" placeholder="Ví dụ: Tran Van B" required>
+
+            <label>Số điện thoại:</label>
+            <input type="text" id="phone" placeholder="0909..." required>
+
+            <label>Email:</label>
+            <input type="email" id="email" placeholder="email@example.com" required>
+            
+            <label>Mật khẩu:</label>
+            <input type="password" id="password" required>
+
+            <label>Nhập lại mật khẩu:</label>
+            <input type="password" id="password_confirmation" required>
+            
+            <button type="submit" id="btnSubmit">Đăng Ký Ngay</button>
+        </form>
+
+        <div id="result"></div>
+
+        <div class="link">
+            Đã có tài khoản? <a href="login.html">Đăng nhập tại đây</a>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const btn = document.getElementById('btnSubmit');
+            const result = document.getElementById('result');
+            
+            // Lấy dữ liệu
+            const data = {
+                name: document.getElementById('name').value,
+                phone: document.getElementById('phone').value,
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value,
+                password_confirmation: document.getElementById('password_confirmation').value
+            };
+
+            btn.innerText = "Đang xử lý...";
+            btn.disabled = true;
+
+            try {
+                // Gọi API Register
+                const response = await fetch('http://localhost/QLPG/public/api/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const resData = await response.json();
+
+                result.style.display = 'block';
+                
+                if (response.ok) {
+                    // Thành công
+                    result.className = 'success';
+                    result.innerHTML = `✅ ${resData.message}<br>Đang chuyển hướng...`;
+                    
+                    // Lưu token để tự động đăng nhập luôn
+                    localStorage.setItem('gym_token', resData.access_token);
+                    localStorage.setItem('gym_user_info', JSON.stringify(resData.data));
+
+                    // Chuyển sang trang Member sau 1.5 giây
+                    setTimeout(() => {
+                        window.location.href = 'pages/member/profile.html';
+                    }, 1500);
+
+                } else {
+                    // Thất bại (Ví dụ: Trùng email, mật khẩu không khớp)
+                    result.className = 'error';
+                    // Nếu Laravel trả về lỗi validate chi tiết
+                    let errorMsg = resData.message; 
+                    if(resData.errors) {
+                        errorMsg = Object.values(resData.errors).flat().join('<br>');
+                    }
+                    result.innerHTML = `❌ ${errorMsg}`;
+                }
+
+            } catch (error) {
+                console.error(error);
+                result.style.display = 'block';
+                result.className = 'error';
+                result.innerText = "Lỗi kết nối Server!";
+            } finally {
+                btn.innerText = "Đăng Ký Ngay";
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

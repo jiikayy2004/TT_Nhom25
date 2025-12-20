@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Đăng Nhập Gym</title>
+    <style>
+        body { font-family: sans-serif; background: #f4f4f4; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .login-box { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); width: 350px; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #0056b3; }
+        #result { margin-top: 20px; padding: 10px; border-radius: 4px; font-size: 14px; word-break: break-all; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    </style>
+</head>
+<body>
+
+    <div class="login-box">
+        <h2 style="text-align: center;">Đăng Nhập Hệ Thống</h2>
+        
+        <form id="loginForm">
+            <label>Email:</label>
+            <input type="email" id="email" value="admin@gym.com" required>
+            
+            <label>Mật khẩu:</label>
+            <input type="password" id="password" value="123456" required>
+            
+            <button type="submit" id="btnSubmit">Đăng Nhập</button>
+        </form>
+
+        <div id="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        const loginForm = document.getElementById('loginForm');
+        const resultDiv = document.getElementById('result');
+        const btnSubmit = document.getElementById('btnSubmit');
+        
+
+        loginForm.addEventListener('submit', async function(event) {
+            // 1. Chặn hành động load lại trang mặc định của form
+            event.preventDefault(); 
+            
+            // 2. Lấy dữ liệu người dùng nhập
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            // Hiển thị trạng thái đang xử lý
+            btnSubmit.innerText = "Đang xử lý...";
+            btnSubmit.disabled = true;
+            resultDiv.style.display = 'none';
+
+            try {
+                // 3. GỌI API (Fetch)
+                // Lưu ý: Đường dẫn phải đúng với server WAMP của bạn
+                const response = await fetch('http://localhost/QLPG/public/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        email: email, 
+                        password: password 
+                    })
+                });
+
+                // 4. Đọc dữ liệu trả về từ Laravel
+                const data = await response.json();
+
+                // 5. Kiểm tra kết quả
+                resultDiv.style.display = 'block';
+                
+                if (response.ok && data.status) {
+                    // --- THÀNH CÔNG ---
+                    resultDiv.className = 'success';
+                    resultDiv.innerHTML = `
+                        <strong>✅ ${data.message}</strong><br>
+                        Xin chào: ${data.data.name} (${data.data.role})<br>
+                        <hr>
+                        Token đã lưu: <i>${data.access_token.substring(0, 15)}...</i>
+                    `;
+
+                    // QUAN TRỌNG: Lưu token vào bộ nhớ trình duyệt để dùng sau này
+                    localStorage.setItem('gym_token', data.access_token);
+                    localStorage.setItem('gym_user_info', JSON.stringify(data.data));
+
+                    // (Tùy chọn) Chuyển hướng sau 2 giây
+                    // setTimeout(() => window.location.href = 'index.html', 2000);
+
+                } else {
+                    // --- THẤT BẠI ---
+                    resultDiv.className = 'error';
+                    resultDiv.innerText = "❌ Lỗi: " + (data.message || "Đăng nhập thất bại");
+                }
+
+            } catch (error) {
+                // Lỗi mạng hoặc server sập
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'error';
+                resultDiv.innerText = "❌ Lỗi kết nối tới Server API! (Kiểm tra lại WAMP)";
+                console.error(error);
+            } finally {
+                // Trả lại nút bấm bình thường
+                btnSubmit.innerText = "Đăng Nhập";
+                btnSubmit.disabled = false;
+            }
+        });
+        
+        
+    </script>
+</body>
+</html>
