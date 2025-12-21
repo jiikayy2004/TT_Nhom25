@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Hội Viên - Gym Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        
+        body { display: flex; height: 100vh; overflow: hidden; background: #f8f9fa; }
+        .sidebar { width: 250px; background: #343a40; color: white; flex-shrink: 0; }
+        .sidebar a { color: #cfd2d6; text-decoration: none; display: block; padding: 15px; border-bottom: 1px solid #4b545c; }
+        .sidebar a:hover, .sidebar a.active { background: #007bff; color: white; }
+        .content { flex-grow: 1; padding: 20px; overflow-y: auto; }
+        .table-box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h3 class="text-center py-3 border-bottom">GYM MASTER</h3>
+        <a href="dashboard.html">📊 Tổng Quan</a>
+        <a href="users.html" class="active">👥 Quản Lý Hội Viên</a> 
+        <a href="packages.html">📦 Quản Lý Gói Tập</a>
+        <a href="#" onclick="logout()">🚪 Đăng Xuất</a>
+    </div>
+
+    <div class="content">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Danh Sách Hội Viên</h2>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                <i class="fas fa-plus"></i> Thêm Hội Viên
+            </button>
+        </div>
+
+        <div class="table-box">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Họ Tên</th>
+                        <th>Email</th>
+                        <th>Vai Trò</th>
+                        <th>SĐT</th>
+                        <th>Hành Động</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody">
+                    <tr><td colspan="6" class="text-center">Đang tải dữ liệu...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="modal fade" id="addUserModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Thêm Hội Viên Mới</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addUserForm">
+                        <div class="mb-3">
+                            <label>Họ tên:</label>
+                            <input type="text" id="newName" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Email:</label>
+                            <input type="email" id="newEmail" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Mật khẩu:</label>
+                            <input type="text" id="newPassword" class="form-control" value="123456" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Số điện thoại:</label>
+                            <input type="text" id="newPhone" class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label>Vai trò:</label>
+                            <select id="newRole" class="form-select">
+                                <option value="member">Hội viên (Member)</option>
+                                <option value="pt">Huấn luyện viên (PT)</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="button" class="btn btn-primary" onclick="saveNewUser()">Lưu Lại</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // 1. Kiểm tra xem người dùng đã đăng nhập chưa 
+        const token = localStorage.getItem('gym_token');
+        if (!token) window.location.href = '../../login.html'; // Không có thì đuổi về trang Login
+
+        // --- HÀM 1: LẤY DANH SÁCH USER TỪ SERVER ---
+        async function fetchUsers() {
+            try {
+                // Gọi điện lên Server xin dữ liệu (API GET /users)
+                const response = await fetch('http://localhost/QLPG/public/api/users', {
+                    method: 'GET',
+                    headers: { 'Authorization': 'Bearer ' + token } // Phải đưa Token ra mới được vào
+                });
+                
+                // Đọc dữ liệu trả về
+                const data = await response.json();
+                
+                // Mang dữ liệu đó đi vẽ bảng
+                renderTable(data.data);
+            } catch (error) { 
+                console.error(error); // In lỗi ra console nếu mạng hỏng
+            }
+        }
+
+        // --- HÀM 2: VẼ DỮ LIỆU LÊN BẢNG HTML ---
+        function renderTable(users) {
+            // Tìm cái khung bảng (tbody)
+            const tbody = document.getElementById('userTableBody');
+            tbody.innerHTML = ''; // Xóa sạch bảng cũ
+            
+            // Nếu không có ai thì hiện thông báo
+            if (!users || users.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center">Chưa có dữ liệu</td></tr>`;
+                return;
+            }
+
+            // Lặp qua từng người (user) và tạo một dòng (tr)
+            users.forEach(user => {
+                // Kiểm tra role để tô màu cho đẹp (PT màu vàng, Member màu xanh)
+                const roleColor = user.role === 'pt' ? 'bg-warning' : 'bg-info';
+                
+                // Tạo HTML cho dòng đó
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${user.id}</td>
+                        <td><strong>${user.name}</strong></td>
+                        <td>${user.email}</td>
+                        <td><span class="badge ${roleColor}">${user.role}</span></td>
+                        <td>${user.phone || ''}</td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" onclick="deleteUser(${user.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>`;
+            });
+        }
+
+        // --- HÀM 3: THÊM USER MỚI (Khi bấm nút Lưu ở Modal) ---
+        async function saveNewUser() {
+            // Gom dữ liệu từ các ô input vào một biến
+            const data = {
+                name: document.getElementById('newName').value,
+                email: document.getElementById('newEmail').value,
+                password: document.getElementById('newPassword').value,
+                phone: document.getElementById('newPhone').value,
+                role: document.getElementById('newRole').value
+            };
+            
+            try {
+                // Gửi dữ liệu lên Server (API POST /users)
+                const response = await fetch('http://localhost/QLPG/public/api/users', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json' // Báo là tôi gửi JSON nhé
+                    },
+                    body: JSON.stringify(data) // Đóng gói dữ liệu thành JSON
+                });
+                
+                const result = await response.json();
+                
+                // Nếu Server bảo OK (status = true)
+                if (result.status) {
+                    alert("✅ Thành công!");
+                    // Tắt Modal đi
+                    bootstrap.Modal.getInstance(document.getElementById('addUserModal')).hide();
+                    // Xóa trắng form
+                    document.getElementById('addUserForm').reset();
+                    // Tải lại danh sách ngay lập tức để thấy người mới
+                    fetchUsers();
+                } else { 
+                    alert("Lỗi: " + result.message); // Hiện lỗi nếu có
+                }
+            } catch (e) { alert("Lỗi kết nối!"); }
+        }
+
+        // --- HÀM 4: XÓA USER (Khi bấm nút Thùng rác) ---
+        async function deleteUser(id) {
+            // Hỏi lại cho chắc chắn
+            if(!confirm("Bạn có chắc chắn muốn xóa hội viên này?")) return;
+            
+            try {
+                // Gọi Server bảo xóa (API DELETE /users/{id})
+                await fetch(`http://localhost/QLPG/public/api/users/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                // Xóa xong thì tải lại danh sách
+                fetchUsers();
+            } catch (e) { alert("Lỗi kết nối!"); }
+        }
+        
+
+        // --- HÀM 5: ĐĂNG XUẤT ---
+        function logout() { 
+            localStorage.removeItem('gym_token'); // Xóa chìa khóa
+            window.location.href = '../../login.html'; // Về trang đăng nhập
+        }
+        
+        // --- CHẠY NGAY KHI VÀO TRANG ---
+        fetchUsers();
+    </script>
+</body>
+</html>

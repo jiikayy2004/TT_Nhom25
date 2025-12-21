@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Gói Tập - Gym Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        body { display: flex; height: 100vh; overflow: hidden; background: #f8f9fa; }
+        .sidebar { width: 250px; background: #343a40; color: white; flex-shrink: 0; }
+        .sidebar a { color: #cfd2d6; text-decoration: none; display: block; padding: 15px; border-bottom: 1px solid #4b545c; }
+        .sidebar a:hover, .sidebar a.active { background: #007bff; color: white; }
+        .content { flex-grow: 1; padding: 20px; overflow-y: auto; }
+        .table-box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h3 class="text-center py-3 border-bottom">GYM MASTER</h3>
+        <a href="dashboard.html">📊 Tổng Quan</a>
+        <a href="users.html">👥 Quản Lý Hội Viên</a>
+        <a href="packages.html" class="active">📦 Quản Lý Gói Tập</a>
+        <a href="#" onclick="logout()">🚪 Đăng Xuất</a>
+    </div>
+
+    <div class="content">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Quản Lý Gói Tập</h2>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPackageModal">
+                <i class="fas fa-plus"></i> Thêm Gói Mới
+            </button>
+        </div>
+
+        <div class="table-box">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Tên Gói</th>
+                        <th>Giá Tiền</th>
+                        <th>Thời Hạn</th>
+                        <th>Hành Động</th>
+                    </tr>
+                </thead>
+                <tbody id="packageTableBody">
+                    <tr><td colspan="5" class="text-center">Đang tải dữ liệu...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="modal fade" id="addPackageModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Tạo Gói Tập Mới</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addPackageForm">
+                        <div class="mb-3">
+                            <label>Tên Gói Tập:</label>
+                            <input type="text" id="packageName" class="form-control" placeholder="Ví dụ: Gói 1 Tháng" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Giá Tiền (VNĐ):</label>
+                            <input type="number" id="packagePrice" class="form-control" placeholder="500000" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Thời Hạn (Ngày):</label>
+                            <input type="number" id="packageDuration" class="form-control" placeholder="30" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="button" class="btn btn-primary" onclick="saveNewPackage()">Lưu Lại</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="editPackageModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Chỉnh Sửa Gói Tập</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editPackageForm">
+                        <input type="hidden" id="editPackageId">
+                        
+                        <div class="mb-3">
+                            <label>Tên Gói Tập:</label>
+                            <input type="text" id="editPackageName" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Giá Tiền (VNĐ):</label>
+                            <input type="number" id="editPackagePrice" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Thời Hạn (Ngày):</label>
+                            <input type="number" id="editPackageDuration" class="form-control" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-warning" onclick="updatePackage()">Lưu Thay Đổi</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        const token = localStorage.getItem('gym_token');
+        if (!token) window.location.href = '../../login.html';
+
+        // --- HÀM 1: LẤY DANH SÁCH GÓI TẬP ---
+        async function fetchPackages() {
+            try {
+                // Gọi API GET /packages
+                const response = await fetch('http://localhost/QLPG/public/api/packages', {
+                    method: 'GET',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await response.json();
+                renderTable(data.data);
+            } catch (error) { console.error(error); }
+        }
+        
+
+        // --- HÀM 2: VẼ BẢNG GÓI TẬP ---
+        function renderTable(packages) {
+            const tbody = document.getElementById('packageTableBody');
+            tbody.innerHTML = '';
+            
+            if (!packages || packages.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center">Chưa có gói tập nào</td></tr>`;
+                return;
+            }
+
+            packages.forEach(pkg => {
+                // Mẹo: Dùng Intl.NumberFormat để biến số 500000 thành chuỗi "500.000" (có dấu chấm)
+                const priceFormatted = new Intl.NumberFormat('vi-VN').format(pkg.price);
+                
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${pkg.id}</td>
+                        <td><strong>${pkg.name}</strong></td>
+                        <td class="text-success fw-bold">${priceFormatted} đ</td>
+                        <td>${pkg.duration_days} ngày</td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" onclick="deletePackage(${pkg.id})">
+                                <i class="fas fa-trash"></i> Xóa
+                            </button>
+                        </td>
+                    </tr>`;
+            });
+            
+        }
+        function renderTable(packages) {
+        const tbody = document.getElementById('packageTableBody');
+        tbody.innerHTML = ''; // Xóa sạch dữ liệu cũ
+
+        if (!packages || packages.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center">Chưa có gói tập nào</td></tr>`;
+        return;
+        }
+
+        packages.forEach(pkg => {
+        
+        const priceFormatted = new Intl.NumberFormat('vi-VN').format(pkg.price);
+        
+        
+        const row = `
+            <tr>
+                <td>${pkg.id}</td>
+                <td><strong>${pkg.name}</strong></td>
+                <td class="text-success fw-bold">${priceFormatted} đ</td>
+                <td>${pkg.duration_days} ngày</td>
+                <td>
+                    <button class="btn btn-sm btn-warning" 
+                        onclick="openEditPackageModal(${pkg.id}, '${pkg.name}', ${pkg.price}, ${pkg.duration_days})">
+                        <i class="fas fa-edit"></i>
+                    </button>
+
+                    <button class="btn btn-sm btn-danger" onclick="deletePackage(${pkg.id})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>`;
+            
+        tbody.innerHTML += row;
+    });
+}
+
+        // --- HÀM 3: THÊM GÓI MỚI ---
+        async function saveNewPackage() {
+            // Lấy dữ liệu từ 3 ô input
+            const data = {
+                name: document.getElementById('packageName').value,
+                price: document.getElementById('packagePrice').value,
+                duration_days: document.getElementById('packageDuration').value
+            };
+            
+            try {
+                // Gọi API POST /packages
+                const response = await fetch('http://localhost/QLPG/public/api/packages', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                if (result.status) {
+                    alert("✅ Thành công!");
+                    bootstrap.Modal.getInstance(document.getElementById('addPackageModal')).hide();
+                    document.getElementById('addPackageForm').reset();
+                    fetchPackages(); // Tải lại bảng ngay
+                } else { alert("Lỗi: " + result.message); }
+            } catch (e) { alert("Lỗi kết nối!"); }
+        }
+        
+
+        // --- HÀM 4: XÓA GÓI ---
+        async function deletePackage(id) {
+            if(!confirm("Xóa gói này?")) return;
+            try {
+                // Gọi API DELETE /packages/{id}
+                await fetch(`http://localhost/QLPG/public/api/packages/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                fetchPackages();
+            } catch (e) { alert("Lỗi kết nối!"); }
+        }
+        
+
+        function logout() { localStorage.removeItem('gym_token'); window.location.href = '../../login.html'; }
+
+        // Chạy ngay khi vào trang
+        fetchPackages();
+
+        // --- HÀM 5: MỞ MODAL SỬA (Điền dữ liệu cũ vào form) ---
+        function openEditPackageModal(id, name, price, duration) {
+            document.getElementById('editPackageId').value = id;
+            document.getElementById('editPackageName').value = name;
+            document.getElementById('editPackagePrice').value = price;
+            document.getElementById('editPackageDuration').value = duration;
+
+            const modal = new bootstrap.Modal(document.getElementById('editPackageModal'));
+            modal.show();
+        }
+
+        // --- HÀM 6: LƯU CẬP NHẬT (Gửi lên Server) ---
+        async function updatePackage() {
+            const id = document.getElementById('editPackageId').value;
+            const data = {
+                name: document.getElementById('editPackageName').value,
+                price: document.getElementById('editPackagePrice').value,
+                duration_days: document.getElementById('editPackageDuration').value
+            };
+
+            try {
+                const response = await fetch(`http://localhost/QLPG/public/api/packages/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.status) {
+                    alert("✅ Cập nhật thành công!");
+                    // Ẩn modal
+                    const modalEl = document.getElementById('editPackageModal');
+                    const modal = bootstrap.Modal.getInstance(modalEl);
+                    modal.hide();
+                    
+                    fetchPackages();
+                } else {
+                    alert("Lỗi: " + result.message);
+                }
+            } catch (error) {
+                alert("Lỗi kết nối Server!");
+            }
+        }
+
+        function logout() { localStorage.removeItem('gym_token'); window.location.href = '../../login.html'; }
+
+        fetchPackages();
+    </script>
+</body>
+</html>
