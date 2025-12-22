@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Lịch Tập - Gym Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { display: flex; height: 100vh; overflow: hidden; background: #f8f9fa; }
+        .sidebar { width: 250px; background: #343a40; color: white; flex-shrink: 0; }
+        .sidebar a { color: #cfd2d6; text-decoration: none; display: block; padding: 15px; border-bottom: 1px solid #4b545c; }
+        .sidebar a:hover, .sidebar a.active { background: #007bff; color: white; }
+        .content { flex-grow: 1; padding: 20px; overflow-y: auto; }
+        .table-box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h3 class="text-center py-3 border-bottom">GYM MASTER</h3>
+        <a href="dashboard.html">📊 Tổng Quan</a>
+        <a href="users.html">👥 Quản Lý Hội Viên</a>
+        <a href="packages.html">📦 Quản Lý Gói Tập</a>
+        <a href="subscriptions.html">📝 Đăng Ký Gói</a>
+        <a href="bookings.html" class="active">📅 Lịch Tập PT</a>
+        <a href="#" onclick="logout()">🚪 Đăng Xuất</a>
+    </div>
+
+    <div class="content">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Lịch Tập Với PT</h2>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addBookingModal">
+                <i class="fas fa-plus"></i> Đặt Lịch Mới
+            </button>
+        </div>
+
+        <div class="table-box">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Hội Viên</th>
+                        <th>PT Hướng Dẫn</th>
+                        <th>Thời Gian Tập</th>
+                        <th>Ghi Chú</th>
+                        <th>Trạng Thái</th>
+                        <th>Hành Động</th>
+                    </tr>
+                </thead>
+                <tbody id="bookingTableBody">
+                    <tr><td colspan="7" class="text-center">Đang tải dữ liệu...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="modal fade" id="addBookingModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Đặt Lịch Tập Mới</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addBookingForm">
+                        <div class="mb-3">
+                            <label>Khách Hàng:</label>
+                            <select id="selectUser" class="form-select" required>
+                                <option value="">-- Đang tải... --</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label>Chọn PT:</label>
+                            <select id="selectPT" class="form-select" required>
+                                <option value="">-- Đang tải... --</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label>Thời Gian Tập:</label>
+                            <input type="datetime-local" id="scheduleTime" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Ghi Chú (Bài tập, yêu cầu...):</label>
+                            <textarea id="note" class="form-control" rows="2"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="button" class="btn btn-primary" onclick="saveBooking()">Gửi Yêu Cầu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        const token = localStorage.getItem('gym_token');
+        if (!token) window.location.href = '../../login.html';
+
+        // --- HÀM 1: LẤY DANH SÁCH LỊCH ---
+        async function fetchBookings() {
+            try {
+                const response = await fetch('http://localhost/QLPG/public/api/bookings', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await response.json();
+                renderTable(data.data);
+            } catch (error) { console.error(error); }
+        }
+
+        function renderTable(bookings) {
+            const tbody = document.getElementById('bookingTableBody');
+            tbody.innerHTML = '';
+            
+            if (!bookings || bookings.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center">Chưa có lịch đặt nào.</td></tr>`;
+                return;
+            }
+
+            bookings.forEach(bk => {
+                // Định dạng ngày giờ cho đẹp (Ví dụ: 20:00 25/12/2025)
+                const time = new Date(bk.schedule_time).toLocaleString('vi-VN');
+                
+                // Màu sắc trạng thái
+                let statusBadge = '';
+                let actionButtons = '';
+
+                if(bk.status === 'pending') {
+                    statusBadge = '<span class="badge bg-warning text-dark">Chờ Duyệt</span>';
+                    // Nếu đang chờ, hiện nút Duyệt/Từ chối
+                    actionButtons = `
+                        <button class="btn btn-sm btn-success" onclick="updateStatus(${bk.id}, 'confirmed')" title="Đồng ý"><i class="fas fa-check"></i></button>
+                        <button class="btn btn-sm btn-danger" onclick="updateStatus(${bk.id}, 'rejected')" title="Từ chối"><i class="fas fa-times"></i></button>
+                    `;
+                } else if (bk.status === 'confirmed') {
+                    statusBadge = '<span class="badge bg-success">Đã Duyệt</span>';
+                    actionButtons = '<small class="text-success"><i class="fas fa-check-circle"></i> Xong</small>';
+                } else {
+                    statusBadge = '<span class="badge bg-secondary">Đã Hủy/Từ chối</span>';
+                    actionButtons = '<small class="text-muted">---</small>';
+                }
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${bk.id}</td>
+                        <td><strong>${bk.user ? bk.user.name : 'Unknown'}</strong></td>
+                        <td><span class="badge bg-info text-dark">${bk.pt ? bk.pt.name : 'Unknown'}</span></td>
+                        <td class="fw-bold">${time}</td>
+                        <td>${bk.note || ''}</td>
+                        <td>${statusBadge}</td>
+                        <td>${actionButtons}</td>
+                    </tr>`;
+            });
+        }
+
+        // --- HÀM 2: LẤY DANH SÁCH NGƯỜI DÙNG ĐỂ ĐỔ VÀO SELECT ---
+        async function loadOptions() {
+            try {
+                const response = await fetch('http://localhost/QLPG/public/api/users', { 
+                    headers: { 'Authorization': 'Bearer ' + token } 
+                });
+                const data = await response.json();
+
+                const selectUser = document.getElementById('selectUser');
+                const selectPT = document.getElementById('selectPT');
+
+                selectUser.innerHTML = '<option value="">-- Chọn Khách --</option>';
+                selectPT.innerHTML = '<option value="">-- Chọn PT --</option>';
+
+                data.data.forEach(u => {
+                    // Đổ vào ô Khách hàng (Ai cũng có thể là khách)
+                    selectUser.innerHTML += `<option value="${u.id}">${u.name}</option>`;
+                    
+                    // Đổ vào ô PT (Chỉ người có role='pt')
+                    if(u.role === 'pt') {
+                        selectPT.innerHTML += `<option value="${u.id}">${u.name}</option>`;
+                    }
+                });
+            } catch (error) { console.error(error); }
+        }
+
+        // --- HÀM 3: GỬI LỊCH ĐẶT MỚI ---
+        async function saveBooking() {
+            const data = {
+                user_id: document.getElementById('selectUser').value,
+                pt_id: document.getElementById('selectPT').value,
+                schedule_time: document.getElementById('scheduleTime').value,
+                note: document.getElementById('note').value
+            };
+
+            if(!data.user_id || !data.pt_id || !data.schedule_time) {
+                alert("Vui lòng điền đủ thông tin!"); return;
+            }
+
+            try {
+                const response = await fetch('http://localhost/QLPG/public/api/bookings', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+
+                if(result.status) {
+                    alert("✅ " + result.message);
+                    bootstrap.Modal.getInstance(document.getElementById('addBookingModal')).hide();
+                    fetchBookings();
+                } else {
+                    alert("❌ Lỗi: " + result.message);
+                }
+            } catch(e) { alert("Lỗi kết nối!"); }
+        }
+
+        // --- HÀM 4: DUYỆT / TỪ CHỐI LỊCH ---
+        async function updateStatus(id, newStatus) {
+            if(!confirm(newStatus === 'confirmed' ? "Duyệt lịch tập này?" : "Từ chối lịch tập này?")) return;
+
+            try {
+                const response = await fetch(`http://localhost/QLPG/public/api/bookings/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                
+                fetchBookings(); // Load lại bảng để thấy trạng thái mới
+            } catch(e) { alert("Lỗi xử lý!"); }
+        }
+
+        function logout() { localStorage.removeItem('gym_token'); window.location.href = '../../login.html'; }
+
+        // Chạy khi mở trang
+        fetchBookings();
+        loadOptions();
+    </script>
+</body>
+</html>

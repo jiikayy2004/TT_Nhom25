@@ -12,7 +12,7 @@ class Package extends Model
     // Khai báo bảng trong database (nếu tên bảng không phải số nhiều chuẩn)
     protected $table = 'packages';
 
-    // Cho phép lưu các cột này (Quan trọng!)
+    // Cho phép lưu các cột này 
     protected $fillable = [
         'name',
         'price',

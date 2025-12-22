@@ -21,13 +21,27 @@
         <h2 style="text-align: center;">Đăng Nhập Hệ Thống</h2>
         
         <form id="loginForm">
-            <label>Email:</label>
-            <input type="email" id="email" value="admin@gym.com" required>
-            
-            <label>Mật khẩu:</label>
-            <input type="password" id="password" value="123456" required>
-            
-            <button type="submit" id="btnSubmit">Đăng Nhập</button>
+            <div class="mb-3">
+                <label class="form-label fw-bold">Email đăng nhập</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                    <input type="email" id="email" class="form-control" placeholder="Nhập email của bạn..." required>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Mật khẩu</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                    <input type="password" id="password" class="form-control" placeholder="Nhập mật khẩu..." required>
+                </div>
+            </div>
+
+            <div class="d-grid gap-2 mt-4">
+                <button type="submit" id="btnSubmit" class="btn btn-primary btn-login">
+                    <i class="fas fa-sign-in-alt"></i> ĐĂNG NHẬP
+                </button>
+            </div>
         </form>
 
         <div id="result" style="display: none;"></div>
@@ -69,26 +83,32 @@
 
                 // 4. Đọc dữ liệu trả về từ Laravel
                 const data = await response.json();
+                
 
                 // 5. Kiểm tra kết quả
                 resultDiv.style.display = 'block';
                 
                 if (response.ok && data.status) {
-                    // --- THÀNH CÔNG ---
-                    resultDiv.className = 'success';
-                    resultDiv.innerHTML = `
-                        <strong>✅ ${data.message}</strong><br>
-                        Xin chào: ${data.data.name} (${data.data.role})<br>
-                        <hr>
-                        Token đã lưu: <i>${data.access_token.substring(0, 15)}...</i>
-                    `;
+                    // --- 1. THÔNG BÁO THÀNH CÔNG ---
+                    alert("✅ Đăng nhập thành công! Xin chào: " + data.data.name);
 
-                    // QUAN TRỌNG: Lưu token vào bộ nhớ trình duyệt để dùng sau này
+                    // --- 2. LƯU DỮ LIỆU (QUAN TRỌNG) ---
+                    // Lưu Token (Chìa khóa)
                     localStorage.setItem('gym_token', data.access_token);
-                    localStorage.setItem('gym_user_info', JSON.stringify(data.data));
+                    
+                    // Lưu Thông tin user (Tên, Role...)
+                    localStorage.setItem('gym_user', JSON.stringify(data.data));
 
-                    // (Tùy chọn) Chuyển hướng sau 2 giây
-                    // setTimeout(() => window.location.href = 'index.html', 2000);
+                    // --- 3. PHÂN LUỒNG CHUYỂN TRANG ---
+                    // Nếu role là 'admin' -> Vào trang Admin
+                    if (data.data.role === 'admin') {
+                        // Chú ý: Kiểm tra lại đường dẫn thư mục của bạn có đúng là pages/admin/... không
+                        window.location.href = 'pages/admin/dashboard.html'; 
+                    } 
+                    // Nếu là 'member' hoặc 'pt' -> Vào trang Member
+                    else {
+                        window.location.href = 'pages/member/dashboard.html';
+                    }
 
                 } else {
                     // --- THẤT BẠI ---

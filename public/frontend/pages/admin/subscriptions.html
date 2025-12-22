@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Đăng Ký - Gym Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        body { display: flex; height: 100vh; overflow: hidden; background: #f8f9fa; }
+        .sidebar { width: 250px; background: #343a40; color: white; flex-shrink: 0; }
+        .sidebar a { color: #cfd2d6; text-decoration: none; display: block; padding: 15px; border-bottom: 1px solid #4b545c; }
+        .sidebar a:hover, .sidebar a.active { background: #007bff; color: white; }
+        .content { flex-grow: 1; padding: 20px; overflow-y: auto; }
+        .table-box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h3 class="text-center py-3 border-bottom">GYM MASTER</h3>
+        <a href="dashboard.html">📊 Tổng Quan</a>
+        <a href="users.html">👥 Quản Lý Hội Viên</a>
+        <a href="packages.html">📦 Quản Lý Gói Tập</a>
+        <a href="subscriptions.html" class="active">📝 Đăng Ký Gói</a>
+        <a href="bookings.html">📅 Lịch Tập PT</a>
+        <a href="#" onclick="logout()">🚪 Đăng Xuất</a>
+    </div>
+
+    <div class="content">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Danh Sách Đăng Ký</h2>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSubModal">
+                <i class="fas fa-plus"></i> Đăng Ký Mới
+            </button>
+        </div>
+
+        <div class="table-box">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Hội Viên</th>
+                        <th>Gói Tập</th>
+                        <th>Ngày Bắt Đầu</th>
+                        <th>Ngày Hết Hạn</th>
+                        <th>Trạng Thái</th>
+                    </tr>
+                </thead>
+                <tbody id="subTableBody">
+                    <tr><td colspan="6" class="text-center">Đang tải dữ liệu...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="modal fade" id="addSubModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Đăng Ký Gói Tập Cho Hội Viên</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addSubForm">
+                        <div class="mb-3">
+                            <label>Chọn Hội Viên:</label>
+                            <select id="selectUser" class="form-select" required>
+                                <option value="">-- Đang tải danh sách user... --</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label>Chọn Gói Tập:</label>
+                            <select id="selectPackage" class="form-select" required>
+                                <option value="">-- Đang tải danh sách gói... --</option>
+                            </select>
+                        </div>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> Hệ thống sẽ tự động tính ngày hết hạn dựa trên gói đã chọn.
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="button" class="btn btn-primary" onclick="saveSubscription()">Lưu & Kích Hoạt</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        const token = localStorage.getItem('gym_token');
+        if (!token) window.location.href = '../../login.html';
+
+        // --- HÀM 1: LẤY DANH SÁCH ĐĂNG KÝ ---
+        async function fetchSubscriptions() {
+            try {
+                const response = await fetch('http://localhost/QLPG/public/api/subscriptions', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await response.json();
+                renderTable(data.data);
+            } catch (error) { console.error(error); }
+        }
+
+        function renderTable(subs) {
+            const tbody = document.getElementById('subTableBody');
+            tbody.innerHTML = '';
+            
+            if (!subs || subs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center">Chưa có dữ liệu đăng ký nào.</td></tr>`;
+                return;
+            }
+
+            subs.forEach(sub => {
+                // Kiểm tra xem đã hết hạn chưa để đổi màu
+                const endDate = new Date(sub.end_date);
+                const today = new Date();
+                // Nếu ngày hết hạn nhỏ hơn hôm nay -> Đã hết hạn
+                const isExpired = endDate < today;
+                
+                const statusBadge = isExpired 
+                    ? '<span class="badge bg-danger">Hết hạn</span>' 
+                    : '<span class="badge bg-success">Đang hoạt động</span>';
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${sub.id}</td>
+                        <td><strong>${sub.user ? sub.user.name : 'Không xác định'}</strong></td>
+                        <td><span class="badge bg-primary">${sub.package ? sub.package.name : 'Không xác định'}</span></td>
+                        <td>${sub.start_date}</td>
+                        <td class="fw-bold">${sub.end_date}</td>
+                        <td>${statusBadge}</td>
+                    </tr>`;
+            });
+        }
+
+        // --- HÀM 2: LẤY DANH SÁCH USER & GÓI ĐỂ ĐỔ VÀO SELECT ---
+        // Hàm này sẽ chạy ngay khi bấm nút "Thêm mới"
+        async function loadOptions() {
+            try {
+                // 1. Lấy Users
+                const resUsers = await fetch('http://localhost/QLPG/public/api/users', { headers: { 'Authorization': 'Bearer ' + token } });
+                const dataUsers = await resUsers.json();
+                
+                // 2. Lấy Packages
+                const resPackages = await fetch('http://localhost/QLPG/public/api/packages', { headers: { 'Authorization': 'Bearer ' + token } });
+                const dataPackages = await resPackages.json();
+
+                // 3. Đổ User vào Select
+                const userSelect = document.getElementById('selectUser');
+                userSelect.innerHTML = '<option value="">-- Chọn Hội Viên --</option>';
+                dataUsers.data.forEach(u => {
+                    // Chỉ hiện Member thường, PT cũng có thể mua gói nếu muốn
+                    userSelect.innerHTML += `<option value="${u.id}">${u.name} (ID: ${u.id})</option>`;
+                });
+
+                // 4. Đổ Package vào Select
+                const pkgSelect = document.getElementById('selectPackage');
+                pkgSelect.innerHTML = '<option value="">-- Chọn Gói Tập --</option>';
+                dataPackages.data.forEach(p => {
+                    pkgSelect.innerHTML += `<option value="${p.id}">${p.name} - ${p.duration_days} ngày (${p.price}đ)</option>`;
+                });
+
+            } catch (error) { console.error(error); }
+        }
+
+        // --- HÀM 3: LƯU ĐĂNG KÝ MỚI ---
+        async function saveSubscription() {
+            const userId = document.getElementById('selectUser').value;
+            const packageId = document.getElementById('selectPackage').value;
+
+            if (!userId || !packageId) {
+                alert("Vui lòng chọn đầy đủ User và Gói!");
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost/QLPG/public/api/subscriptions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        package_id: packageId
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.status) {
+                    alert("✅ Đăng ký thành công! Hạn dùng đến: " + result.data.end_date);
+                    bootstrap.Modal.getInstance(document.getElementById('addSubModal')).hide();
+                    fetchSubscriptions(); // Tải lại bảng
+                } else {
+                    alert("Lỗi: " + result.message);
+                }
+            } catch (e) { alert("Lỗi kết nối!"); }
+        }
+
+        function logout() { localStorage.removeItem('gym_token'); window.location.href = '../../login.html'; }
+
+        // --- CHẠY KHI VÀO TRANG ---
+        fetchSubscriptions();
+        loadOptions(); // Tải sẵn danh sách User/Package vào dropdown luôn cho mượt
+    </script>
+</body>
+</html>
