@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Ký Hội Viên — GymKayy</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./assets/css/style.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="index.html" class="logo">
+                <div class="logo-icon">920</div>
+                <div class="logo-text">Gym<span>Kayy</span></div>
+            </a>
+            <ul class="nav-menu">
+                <li><a href="index.html">Trang chủ</a></li>
+                <li><a href="register.html" class="active">Đăng ký</a></li>
+                <li><a href="login.html">Đăng nhập</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main style="margin-top:110px;">
+        <section style="display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 140px);padding:40px;">
+            <div class="package-card" style="max-width:560px;width:100%;">
+                <h2 style="text-align:center;margin-bottom:18px;font-size:22px;">Đăng Ký Hội Viên</h2>
+
+                <form id="registerForm">
+                    <div style="display:grid;gap:10px;">
+                        <label class="form-label" style="font-weight:600;color:#cfcfcf;">Họ và tên</label>
+                        <input type="text" id="name" placeholder="Ví dụ: Tran Van B" required style="width:100%;padding:12px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit;">
+
+                        <label class="form-label" style="font-weight:600;color:#cfcfcf;">Số điện thoại</label>
+                        <input type="text" id="phone" placeholder="0909..." required style="width:100%;padding:12px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit;">
+
+                        <label class="form-label" style="font-weight:600;color:#cfcfcf;">Email</label>
+                        <input type="email" id="email" placeholder="email@example.com" required style="width:100%;padding:12px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit;">
+
+                        <label class="form-label" style="font-weight:600;color:#cfcfcf;">Mật khẩu</label>
+                        <input type="password" id="password" required style="width:100%;padding:12px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit;">
+
+                        <label class="form-label" style="font-weight:600;color:#cfcfcf;">Nhập lại mật khẩu</label>
+                        <input type="password" id="password_confirmation" required style="width:100%;padding:12px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit;">
+                    </div>
+
+                    <div style="margin-top:18px;">
+                        <button type="submit" id="btnSubmit" class="btn-primary" style="width:100%;">Đăng Ký Ngay</button>
+                    </div>
+                </form>
+
+                <div id="result" style="display:none;margin-top:12px;color:#ff6b6b;"></div>
+
+                <div style="text-align:center;margin-top:14px;color:#9a9a9a;">Đã có tài khoản? <a href="login.html">Đăng nhập tại đây</a></div>
+            </div>
+        </section>
+    </main>
+
+    <footer style="margin-top:40px;">
+        <div style="max-width:1200px;margin:0 auto;padding:20px;color:#808080;text-align:center;">© 2025 GymKayy</div>
+    </footer>
+
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const btn = document.getElementById('btnSubmit');
+            const result = document.getElementById('result');
+            
+            // Lấy dữ liệu
+            const data = {
+                name: document.getElementById('name').value,
+                phone: document.getElementById('phone').value,
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value,
+                password_confirmation: document.getElementById('password_confirmation').value
+            };
+
+            btn.innerText = "Đang xử lý...";
+            btn.disabled = true;
+
+            try {
+                // Gọi API Register
+                const response = await fetch('http://localhost/QLPG/public/api/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const resData = await response.json();
+
+                result.style.display = 'block';
+                
+                if (response.ok) {
+                    // Thành công
+                    result.className = 'success';
+                    result.innerHTML = `✅ ${resData.message}<br>Đang chuyển hướng...`;
+                    
+                    // Lưu token để tự động đăng nhập luôn
+                    localStorage.setItem('gym_token', resData.access_token);
+                    localStorage.setItem('gym_user_info', JSON.stringify(resData.data));
+
+                    // Chuyển sang trang Member sau 1.5 giây
+                    setTimeout(() => {
+                        window.location.href = 'pages/member/profile.html';
+                    }, 1500);
+
+                } else {
+                    // Thất bại (Ví dụ: Trùng email, mật khẩu không khớp)
+                    result.className = 'error';
+                    // Nếu Laravel trả về lỗi validate chi tiết
+                    let errorMsg = resData.message; 
+                    if(resData.errors) {
+                        errorMsg = Object.values(resData.errors).flat().join('<br>');
+                    }
+                    result.innerHTML = `❌ ${errorMsg}`;
+                }
+
+            } catch (error) {
+                console.error(error);
+                result.style.display = 'block';
+                result.className = 'error';
+                result.innerText = "Lỗi kết nối Server!";
+            } finally {
+                btn.innerText = "Đăng Ký Ngay";
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

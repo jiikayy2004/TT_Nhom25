@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PT Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="../../css/style.css">
+</head>
+<body>
+
+    <div class="wrapper">
+        <nav id="sidebar">
+            <div class="brand">PT ZONE</div>
+            <ul>
+                <li><a href="#" class="active"><i class="fas fa-calendar-check"></i> Lịch Dạy</a></li>
+                <li><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Đăng Xuất</a></li>
+            </ul>
+        </nav>
+
+        <div id="content">
+            <h2 class="page-title" id="welcomeMsg">Xin chào PT</h2>
+            
+            <div class="alert alert-info mt-3">
+                <strong>🔧 Thông tin gỡ lỗi:</strong><br>
+                - ID của bạn: <strong id="debug-my-id">...</strong><br>
+                - Tổng số lịch trên hệ thống: <strong id="debug-total">...</strong><br>
+                - Số lịch khớp với bạn: <strong id="debug-match">...</strong>
+            </div>
+
+            <div class="card-dark mt-4">
+                <div class="d-flex justify-content-between mb-3">
+                    <h4>Danh Sách Yêu Cầu</h4>
+                    <button class="btn btn-sm btn-primary" onclick="loadSchedule()">Làm mới</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table-dark-custom" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>Học Viên</th>
+                                <th>Giờ Tập</th>
+                                <th>Ghi Chú</th>
+                                <th>Trạng Thái</th>
+                                <th>Hành Động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scheduleBody">
+                            <tr><td colspan="5">Đang tải...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    
+    <script>
+        // 1. Kiểm tra đăng nhập
+        const token = localStorage.getItem('gym_token');
+        const user = JSON.parse(localStorage.getItem('gym_user') || '{}');
+
+        if (!token || user.role !== 'pt') {
+            alert("Bạn không phải là PT hoặc chưa đăng nhập!");
+            window.location.href = '../../login.html';
+        }
+
+        document.getElementById('welcomeMsg').innerText = `Xin chào HLV ${user.name}`;
+        document.getElementById('debug-my-id').innerText = user.id; // Hiển thị ID của PT để check
+
+        // 2. Tải lịch tập
+        async function loadSchedule() {
+            try {
+                const res = await fetch(`${API_URL}/bookings`, { 
+                    headers: { 'Authorization': 'Bearer ' + token } 
+                });
+                const data = await res.json();
+                
+                // Debug thông tin
+                document.getElementById('debug-total').innerText = data.data.length;
+
+                const tbody = document.getElementById('scheduleBody');
+                tbody.innerHTML = '';
+
+                // LỌC: Chỉ lấy lịch có pt_id trùng với ID của người đang đăng nhập
+                const mySchedule = data.data.filter(bk => bk.pt_id == user.id);
+                document.getElementById('debug-match').innerText = mySchedule.length;
+
+                if (mySchedule.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Không tìm thấy lịch nào cho bạn.</td></tr>';
+                    return;
+                }
+
+                // Vẽ bảng
+                mySchedule.forEach(bk => {
+                    let statusHtml = '';
+                    let actionHtml = '';
+
+                    // Xử lý trạng thái và nút bấm
+                    if (bk.status === 'pending') {
+                        statusHtml = '<span class="badge bg-warning text-dark">Chờ duyệt</span>';
+                        actionHtml = `
+                            <button class="btn btn-sm btn-success" onclick="updateStatus(${bk.id}, 'confirmed')">✔ Duyệt</button>
+                            <button class="btn btn-sm btn-danger" onclick="updateStatus(${bk.id}, 'rejected')">✖ Từ chối</button>
+                        `;
+                    } else if (bk.status === 'confirmed') {
+                        statusHtml = '<span class="badge bg-success">Đã nhận</span>';
+                        actionHtml = '<span class="text-success"><i class="fas fa-check"></i> Xong</span>';
+                    } else {
+                        statusHtml = '<span class="badge bg-danger">Đã từ chối</span>';
+                        actionHtml = '-';
+                    }
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${bk.user ? bk.user.name : 'Unknown'}</td>
+                            <td>${new Date(bk.schedule_time).toLocaleString('vi-VN')}</td>
+                            <td>${bk.note || ''}</td>
+                            <td>${statusHtml}</td>
+                            <td>${actionHtml}</td>
+                        </tr>
+                    `;
+                });
+
+            } catch (error) {
+                console.error(error);
+                alert("Lỗi tải dữ liệu!");
+            }
+        }
+
+        // 3. Cập nhật trạng thái (Duyệt/Từ chối)
+        async function updateStatus(id, newStatus) {
+            if (!confirm("Bạn chắc chắn muốn thực hiện hành động này?")) return;
+
+            try {
+                const res = await fetch(`${API_URL}/bookings/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                });
+
+                if (res.ok) {
+                    alert("Cập nhật thành công!");
+                    loadSchedule(); // Tải lại bảng
+                } else {
+                    alert("Lỗi cập nhật!");
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function logout() {
+            localStorage.removeItem('gym_token');
+            localStorage.removeItem('gym_user');
+            window.location.href = '../../login.html';
+        }
+
+        // Chạy ngay khi vào trang
+        loadSchedule();
+    </script>
+</body>
+</html>

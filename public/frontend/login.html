@@ -3,56 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Đăng Nhập Gym</title>
-    <style>
-        body { font-family: sans-serif; background: #f4f4f4; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        .login-box { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); width: 350px; }
-        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-        button { width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
-        button:hover { background: #0056b3; }
-        #result { margin-top: 20px; padding: 10px; border-radius: 4px; font-size: 14px; word-break: break-all; }
-        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-    </style>
+    <title>Đăng nhập — GymKayy</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./assets/css/style.css">
 </head>
 <body>
+    <header>
+        <nav>
+            <a href="index.html" class="logo">
+                <div class="logo-icon">920</div>
+                <div class="logo-text">Gym<span>Kayy</span></div>
+            </a>
+            <ul class="nav-menu">
+                <li><a href="index.html">Trang chủ</a></li>
+                <li><a href="register.html">Đăng ký</a></li>
+                <li><a href="login.html" class="active">Đăng nhập</a></li>
+            </ul>
+        </nav>
+    </header>
 
-    <div class="login-box">
-        <h2 style="text-align: center;">Đăng Nhập Hệ Thống</h2>
-        
-        <form id="loginForm">
-            <div class="mb-3">
-                <label class="form-label fw-bold">Email đăng nhập</label>
-                <div class="input-group">
-                    <span class="input-group-text"><i class="fas fa-envelope"></i></span>
-                    <input type="email" id="email" class="form-control" placeholder="Nhập email của bạn..." required>
-                </div>
+    <main style="margin-top:110px;">
+        <section style="display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 140px);padding:40px;">
+            <div class="package-card" style="max-width:440px;width:100%;">
+                <h2 style="text-align:center;margin-bottom:18px;font-size:22px;">Đăng Nhập Hệ Thống</h2>
+
+                <form id="loginForm">
+                    <div style="margin-bottom:14px;">
+                        <label class="form-label" style="display:block;margin-bottom:6px;font-weight:600;color:#cfcfcf;">Email đăng nhập</label>
+                        <input type="email" id="email" placeholder="Nhập email của bạn..." required style="width:100%;padding:12px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit;">
+                    </div>
+
+                    <div style="margin-bottom:6px;">
+                        <label class="form-label" style="display:block;margin-bottom:6px;font-weight:600;color:#cfcfcf;">Mật khẩu</label>
+                        <input type="password" id="password" placeholder="Nhập mật khẩu..." required style="width:100%;padding:12px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit;">
+                    </div>
+
+                    <div style="margin-top:18px;">
+                        <button type="submit" id="btnSubmit" class="btn-primary btn-login" style="width:100%;">ĐĂNG NHẬP</button>
+                    </div>
+                </form>
+
+                <div id="result" style="display:none;margin-top:12px;color:#ff6b6b;"></div>
             </div>
+        </section>
+    </main>
 
-            <div class="mb-3">
-                <label class="form-label fw-bold">Mật khẩu</label>
-                <div class="input-group">
-                    <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                    <input type="password" id="password" class="form-control" placeholder="Nhập mật khẩu..." required>
-                </div>
-            </div>
-
-            <div class="d-grid gap-2 mt-4">
-                <button type="submit" id="btnSubmit" class="btn btn-primary btn-login">
-                    <i class="fas fa-sign-in-alt"></i> ĐĂNG NHẬP
-                </button>
-            </div>
-        </form>
-
-        <div id="result" style="display: none;"></div>
-    </div>
+    <footer style="margin-top:40px;">
+        <!-- minimal footer to keep consistent look -->
+        <div style="max-width:1200px;margin:0 auto;padding:20px;color:#808080;text-align:center;">© 2025 GymKayy</div>
+    </footer>
 
     <script>
         const loginForm = document.getElementById('loginForm');
         const resultDiv = document.getElementById('result');
         const btnSubmit = document.getElementById('btnSubmit');
         
-
+        
         loginForm.addEventListener('submit', async function(event) {
             // 1. Chặn hành động load lại trang mặc định của form
             event.preventDefault(); 
@@ -89,27 +97,28 @@
                 resultDiv.style.display = 'block';
                 
                 if (response.ok && data.status) {
-                    // --- 1. THÔNG BÁO THÀNH CÔNG ---
-                    alert("✅ Đăng nhập thành công! Xin chào: " + data.data.name);
-
-                    // --- 2. LƯU DỮ LIỆU (QUAN TRỌNG) ---
-                    // Lưu Token (Chìa khóa)
-                    localStorage.setItem('gym_token', data.access_token);
                     
-                    // Lưu Thông tin user (Tên, Role...)
-                    localStorage.setItem('gym_user', JSON.stringify(data.data));
+                    alert("✅ Đăng nhập thành công!");
+                    
+                    // Lưu Token & User info
+                    localStorage.setItem('gym_token', data.access_token); // Hoặc data.token tùy API
+                    localStorage.setItem('gym_user', JSON.stringify(data.data)); // Hoặc data.user tùy API
 
-                    // --- 3. PHÂN LUỒNG CHUYỂN TRANG ---
-                    // Nếu role là 'admin' -> Vào trang Admin
-                    if (data.data.role === 'admin') {
-                        // Chú ý: Kiểm tra lại đường dẫn thư mục của bạn có đúng là pages/admin/... không
-                        window.location.href = 'pages/admin/dashboard.html'; 
+                    // --- PHÂN LUỒNG ĐIỀU HƯỚNG ---
+                    const role = data.data.role; // Lấy role của user
+
+                    if (role === 'admin') {
+                        // 1. Admin -> Vào Dashboard Admin
+                        window.location.href = 'pages/admin/dashboard.html';
                     } 
-                    // Nếu là 'member' hoặc 'pt' -> Vào trang Member
+                    else if (role === 'pt') {
+                        // 2. PT -> Vào Dashboard PT (MỚI)
+                        window.location.href = 'pages/pt/dashboard.html';
+                    } 
                     else {
-                        window.location.href = 'pages/member/dashboard.html';
+                        // 3. Khách hàng -> Về Trang chủ
+                        window.location.href = 'index.html';
                     }
-
                 } else {
                     // --- THẤT BẠI ---
                     resultDiv.className = 'error';
