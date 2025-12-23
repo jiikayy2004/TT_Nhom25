@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PT Dashboard</title>
+    <title>Khu Vực PT - Gym Master</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="../../css/style.css">
+    <link rel="stylesheet" href="./ptstyle.css">
 </head>
 <body>
 
@@ -20,122 +20,178 @@
         </nav>
 
         <div id="content">
-            <h2 class="page-title" id="welcomeMsg">Xin chào PT</h2>
-            
-            <div class="alert alert-info mt-3">
-                <strong>🔧 Thông tin gỡ lỗi:</strong><br>
-                - ID của bạn: <strong id="debug-my-id">...</strong><br>
-                - Tổng số lịch trên hệ thống: <strong id="debug-total">...</strong><br>
-                - Số lịch khớp với bạn: <strong id="debug-match">...</strong>
+            <div class="d-md-none mb-3 d-flex align-items-center">
+                <button id="sidebarToggle" class="btn btn-neon me-3"><i class="fas fa-bars"></i></button>
+                <h4 class="m-0 fw-bold">PT DASHBOARD</h4>
+            </div>
+
+            <div class="page-header">
+                <h2 class="page-title" id="welcomeMsg">Xin chào PT...</h2>
+                <div class="text-muted">Quản lý lịch dạy của bạn</div>
+            </div>
+
+            <div class="alert alert-dark mt-3" style="border: 1px solid #334155;">
+                <small class="text-muted">🔧 Debug Info:</small><br>
+                <span>ID Của Bạn: <b id="debug-id" class="text-warning">...</b></span> | 
+                <span>Tổng Lịch Tìm Thấy: <b id="debug-count" class="text-info">...</b></span>
             </div>
 
             <div class="card-dark mt-4">
-                <div class="d-flex justify-content-between mb-3">
-                    <h4>Danh Sách Yêu Cầu</h4>
-                    <button class="btn btn-sm btn-primary" onclick="loadSchedule()">Làm mới</button>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="m-0">📅 Danh Sách Yêu Cầu</h4>
+                    <button class="btn btn-sm btn-outline-light" onclick="loadMySchedule()">
+                        <i class="fas fa-sync"></i> Làm mới
+                    </button>
                 </div>
+                
                 <div class="table-responsive">
-                    <table class="table-dark-custom" style="width:100%">
+                    <table class="table-dark-custom">
                         <thead>
                             <tr>
                                 <th>Học Viên</th>
-                                <th>Giờ Tập</th>
+                                <th>Thời Gian</th>
                                 <th>Ghi Chú</th>
                                 <th>Trạng Thái</th>
                                 <th>Hành Động</th>
                             </tr>
                         </thead>
                         <tbody id="scheduleBody">
-                            <tr><td colspan="5">Đang tải...</td></tr>
+                            <tr><td colspan="5" class="text-center">Đang tải dữ liệu...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
+        <div class="overlay"></div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    
-    <script>
-        // 1. Kiểm tra đăng nhập
-        const token = localStorage.getItem('gym_token');
-        const user = JSON.parse(localStorage.getItem('gym_user') || '{}');
 
-        if (!token || user.role !== 'pt') {
-            alert("Bạn không phải là PT hoặc chưa đăng nhập!");
+    <script>
+        // --- 1. CẤU HÌNH ---
+        const API_URL = 'http://localhost/QLPG/public/api'; // Đảm bảo đường dẫn này đúng với máy bạn
+
+        // --- 2. KIỂM TRA ĐĂNG NHẬP ---
+        const token = localStorage.getItem('gym_token');
+        const userStr = localStorage.getItem('gym_user');
+
+        if (!token || !userStr) {
+            alert("Vui lòng đăng nhập lại!");
             window.location.href = '../../login.html';
         }
 
-        document.getElementById('welcomeMsg').innerText = `Xin chào HLV ${user.name}`;
-        document.getElementById('debug-my-id').innerText = user.id; // Hiển thị ID của PT để check
+        const user = JSON.parse(userStr);
+        
+        // Kiểm tra quyền (Chỉ PT mới được vào)
+        if (user.role !== 'pt') {
+            alert("Bạn không có quyền truy cập trang này!");
+            window.location.href = '../../login.html';
+        }
 
-        // 2. Tải lịch tập
-        async function loadSchedule() {
+        // Hiển thị thông tin
+        document.getElementById('welcomeMsg').innerText = `Xin chào HLV ${user.name}`;
+        document.getElementById('debug-id').innerText = user.id;
+
+        // --- 3. XỬ LÝ SIDEBAR MOBILE ---
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.querySelector('.overlay');
+        const btnToggle = document.getElementById('sidebarToggle');
+        const wrapper = document.querySelector('.wrapper');
+        
+        if(btnToggle) {
+            btnToggle.addEventListener('click', () => { 
+                wrapper.classList.add('active'); 
+            });
+            overlay.addEventListener('click', () => { 
+                wrapper.classList.remove('active'); 
+            });
+        }
+
+        // --- 4. TẢI LỊCH DẠY ---
+        async function loadMySchedule() {
             try {
+                // Gọi API
                 const res = await fetch(`${API_URL}/bookings`, { 
                     headers: { 'Authorization': 'Bearer ' + token } 
                 });
+                
                 const data = await res.json();
                 
-                // Debug thông tin
-                document.getElementById('debug-total').innerText = data.data.length;
+                // Debug dữ liệu ra Console (Ấn F12 để xem nếu lỗi)
+                console.log("Dữ liệu từ Server:", data);
 
                 const tbody = document.getElementById('scheduleBody');
                 tbody.innerHTML = '';
 
-                // LỌC: Chỉ lấy lịch có pt_id trùng với ID của người đang đăng nhập
-                const mySchedule = data.data.filter(bk => bk.pt_id == user.id);
-                document.getElementById('debug-match').innerText = mySchedule.length;
-
-                if (mySchedule.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Không tìm thấy lịch nào cho bạn.</td></tr>';
+                if (!data.data) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Lỗi cấu trúc dữ liệu!</td></tr>';
                     return;
                 }
 
-                // Vẽ bảng
-                mySchedule.forEach(bk => {
-                    let statusHtml = '';
-                    let actionHtml = '';
+                // LỌC: Chỉ lấy lịch có pt_id trùng với ID của người đang đăng nhập
+                const mySchedule = data.data.filter(bk => bk.pt_id == user.id);
+                
+                // Cập nhật số lượng tìm thấy
+                document.getElementById('debug-count').innerText = mySchedule.length;
 
-                    // Xử lý trạng thái và nút bấm
+                if (mySchedule.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Chưa có lịch dạy nào được phân công cho bạn.</td></tr>';
+                    return;
+                }
+
+                // Sắp xếp: Mới nhất lên đầu
+                mySchedule.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+                mySchedule.forEach(bk => {
+                    let actions = '';
+                    let statusBadge = '';
+
+                    // Xử lý hiển thị theo trạng thái
                     if (bk.status === 'pending') {
-                        statusHtml = '<span class="badge bg-warning text-dark">Chờ duyệt</span>';
-                        actionHtml = `
-                            <button class="btn btn-sm btn-success" onclick="updateStatus(${bk.id}, 'confirmed')">✔ Duyệt</button>
-                            <button class="btn btn-sm btn-danger" onclick="updateStatus(${bk.id}, 'rejected')">✖ Từ chối</button>
+                        statusBadge = '<span class="badge-status bg-warning text-dark">Chờ duyệt</span>';
+                        actions = `
+                            <button class="btn-icon text-success border-success me-2" onclick="updateStatus(${bk.id}, 'confirmed')" title="Đồng ý">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            <button class="btn-icon text-danger border-danger" onclick="updateStatus(${bk.id}, 'rejected')" title="Từ chối">
+                                <i class="fas fa-times"></i>
+                            </button>
                         `;
                     } else if (bk.status === 'confirmed') {
-                        statusHtml = '<span class="badge bg-success">Đã nhận</span>';
-                        actionHtml = '<span class="text-success"><i class="fas fa-check"></i> Xong</span>';
+                        statusBadge = '<span class="badge-status bg-success">Đã nhận</span>';
+                        actions = '<span class="text-success small"><i class="fas fa-check-circle"></i> Đã nhận</span>';
                     } else {
-                        statusHtml = '<span class="badge bg-danger">Đã từ chối</span>';
-                        actionHtml = '-';
+                        statusBadge = '<span class="badge-status bg-expired">Đã từ chối</span>';
+                        actions = '-';
                     }
 
                     tbody.innerHTML += `
                         <tr>
-                            <td>${bk.user ? bk.user.name : 'Unknown'}</td>
-                            <td>${new Date(bk.schedule_time).toLocaleString('vi-VN')}</td>
-                            <td>${bk.note || ''}</td>
-                            <td>${statusHtml}</td>
-                            <td>${actionHtml}</td>
-                        </tr>
-                    `;
+                            <td class="fw-bold text-white">${bk.user ? bk.user.name : 'Unknown'}</td>
+                            <td>
+                                <div>${new Date(bk.schedule_time).toLocaleDateString('vi-VN')}</div>
+                                <small class="text-muted">${new Date(bk.schedule_time).toLocaleTimeString('vi-VN')}</small>
+                            </td>
+                            <td>${bk.note || '-'}</td>
+                            <td>${statusBadge}</td>
+                            <td>${actions}</td>
+                        </tr>`;
                 });
 
-            } catch (error) {
-                console.error(error);
-                alert("Lỗi tải dữ liệu!");
+            } catch (e) { 
+                console.error("LỖI:", e);
+                document.getElementById('scheduleBody').innerHTML = `<tr><td colspan="5" class="text-center text-danger">Lỗi kết nối: ${e.message}</td></tr>`;
+                alert("Lỗi tải dữ liệu! Hãy nhấn F12 chọn tab Console để xem chi tiết.");
             }
         }
 
-        // 3. Cập nhật trạng thái (Duyệt/Từ chối)
-        async function updateStatus(id, newStatus) {
-            if (!confirm("Bạn chắc chắn muốn thực hiện hành động này?")) return;
+        // --- 5. CẬP NHẬT TRẠNG THÁI ---
+        async function updateStatus(bookingId, newStatus) {
+            const confirmMsg = newStatus === 'confirmed' ? "Bạn muốn NHẬN lịch này?" : "Bạn muốn TỪ CHỐI lịch này?";
+            if (!confirm(confirmMsg)) return;
 
             try {
-                const res = await fetch(`${API_URL}/bookings/${id}`, {
+                const res = await fetch(`${API_URL}/bookings/${bookingId}`, {
                     method: 'PUT',
                     headers: {
                         'Authorization': 'Bearer ' + token,
@@ -144,13 +200,18 @@
                     body: JSON.stringify({ status: newStatus })
                 });
 
+                const result = await res.json();
+                
                 if (res.ok) {
-                    alert("Cập nhật thành công!");
-                    loadSchedule(); // Tải lại bảng
+                    alert("✅ Đã cập nhật thành công!");
+                    loadMySchedule(); // Tải lại bảng
                 } else {
-                    alert("Lỗi cập nhật!");
+                    alert("❌ Lỗi: " + (result.message || "Không thể cập nhật"));
                 }
-            } catch (e) { console.error(e); }
+            } catch (e) {
+                alert("Lỗi kết nối server!");
+                console.error(e);
+            }
         }
 
         function logout() {
@@ -159,8 +220,8 @@
             window.location.href = '../../login.html';
         }
 
-        // Chạy ngay khi vào trang
-        loadSchedule();
+        // Chạy ngay khi mở trang
+        loadMySchedule();
     </script>
 </body>
 </html>

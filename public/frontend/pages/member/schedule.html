@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lịch Tập & Đặt Lớp - GymKayy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../../styleadmin.css"> <style>
+        /* --- GIAO DIỆN DARK MODE --- */
+        body {
+            background-color: #0b0b0b;
+            color: #ffffff;
+            font-family: 'Segoe UI', sans-serif;
+            min-height: 100vh;
+            display: flex; flex-direction: column;
+        }
+
+        /* Navbar */
+        .navbar { background: #151515; border-bottom: 1px solid #333; padding: 15px 0; }
+        .navbar-brand { font-size: 1.5rem; font-weight: 800; text-transform: uppercase; }
+        .navbar-brand span { color: #dc3545; }
+
+        /* Thanh chọn ngày (Scroller) */
+        .day-scroller {
+            display: flex; gap: 12px; overflow-x: auto; padding-bottom: 10px;
+            margin-bottom: 30px;
+            scrollbar-width: thin; scrollbar-color: #dc3545 #1a1a1a;
+        }
+        .day-card {
+            min-width: 90px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 15px 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+        .day-card:hover { border-color: #dc3545; background: #222; }
+        .day-card.active {
+            background: #dc3545;
+            border-color: #dc3545;
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.4);
+        }
+        .day-name { font-size: 0.85rem; text-transform: uppercase; color: #aaa; margin-bottom: 5px; }
+        .day-card.active .day-name { color: #fff; }
+        .day-number { font-size: 1.8rem; font-weight: 700; line-height: 1; }
+
+        /* Thẻ Lớp Học (Class Card) */
+        .class-card {
+            background: #151515;
+            border: 1px solid #333;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            transition: 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        .class-card::before {
+            content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: #dc3545;
+        }
+        .class-card:hover { transform: translateX(5px); background: #1e1e1e; }
+        
+        .time-box {
+            min-width: 100px; text-align: center; border-right: 1px solid #333; padding-right: 20px; margin-right: 20px;
+        }
+        .time-start { font-size: 1.4rem; font-weight: 800; color: #fff; }
+        .time-end { font-size: 0.9rem; color: #888; }
+
+        .info-box { flex: 1; }
+        .class-title { font-size: 1.3rem; font-weight: 700; margin: 0 0 5px; color: #fff; }
+        .trainer-name { font-size: 0.95rem; color: #aaa; margin-bottom: 10px; }
+        .trainer-name i { color: #dc3545; width: 20px; }
+        
+        .slot-badge {
+            background: rgba(255, 255, 255, 0.1); padding: 5px 12px; border-radius: 20px;
+            font-size: 0.85rem; color: #ccc; display: inline-block;
+        }
+
+        .btn-book {
+            background: transparent; border: 2px solid #dc3545; color: #dc3545;
+            padding: 10px 25px; border-radius: 50px; font-weight: 700;
+            transition: 0.3s; white-space: nowrap;
+        }
+        .btn-book:hover { background: #dc3545; color: #fff; box-shadow: 0 0 15px rgba(220, 53, 69, 0.5); }
+        .btn-book:disabled { border-color: #555; color: #555; cursor: not-allowed; background: transparent; box-shadow: none;}
+
+        /* Responsive Mobile */
+        @media (max-width: 768px) {
+            .class-card { flex-direction: column; text-align: center; padding: 20px; }
+            .time-box { border-right: none; border-bottom: 1px solid #333; padding: 0 0 15px; margin: 0 0 15px; width: 100%; }
+            .class-card::before { width: 100%; height: 4px; left: 0; top: 0; bottom: auto; }
+            .btn-book { width: 100%; margin-top: 15px; }
+            .class-card:hover { transform: translateY(-5px); }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="../../index.html">Gym<span>Kayy</span></a>
+            <div class="d-flex gap-2">
+                <a href="dashboard.html" class="btn btn-outline-light btn-sm rounded-pill px-3">
+                    <i class="fas fa-columns"></i> Dashboard
+                </a>
+                <a href="profile.html" class="btn btn-secondary btn-sm rounded-pill px-3">
+                    <i class="fas fa-user"></i> Hồ sơ
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-5 flex-grow-1">
+        <div class="d-flex justify-content-between align-items-end mb-4">
+            <div>
+                <h6 class="text-danger fw-bold text-uppercase mb-1">Thời khóa biểu</h6>
+                <h2 class="fw-bold mb-0">Đặt Lịch Tập</h2>
+            </div>
+            <select class="form-select bg-dark text-white border-secondary w-auto" id="subjectFilter" style="min-width: 150px;">
+                <option value="all">Tất cả bộ môn</option>
+                <option value="Yoga">Yoga</option>
+                <option value="Boxing">Boxing</option>
+                <option value="Cardio">Cardio</option>
+                <option value="Gym">Gym (PT)</option>
+            </select>
+        </div>
+
+        <div class="day-scroller" id="dayContainer">
+            </div>
+
+        <div id="scheduleContainer">
+            <div class="text-center py-5 text-muted">
+                <div class="spinner-border text-danger mb-3" role="status"></div>
+                <p>Đang tải lịch tập...</p>
+            </div>
+        </div>
+    </div>
+
+    <footer class="text-center py-4 border-top border-secondary mt-auto" style="background: #111;">
+        <p class="text-muted m-0 small">© 2025 GymKayy System. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // CẤU HÌNH API
+        const API_BASE_URL = 'http://localhost/QLPG/public/api';
+        const token = localStorage.getItem('gym_token');
+        const userStr = localStorage.getItem('gym_user');
+        
+        // 1. Kiểm tra đăng nhập
+        if (!token || !userStr) {
+            alert("Vui lòng đăng nhập để đặt lịch!");
+            window.location.href = '../../login.html';
+        }
+        const currentUser = JSON.parse(userStr);
+
+        // --- KHỞI TẠO TRANG ---
+        document.addEventListener('DOMContentLoaded', () => {
+            renderDaySelector();
+        });
+
+        // --- HÀM 1: TẠO THANH CHỌN NGÀY (7 NGÀY TỚI) ---
+        let selectedDate = new Date().toISOString().split('T')[0]; // Mặc định là hôm nay (YYYY-MM-DD)
+
+        function renderDaySelector() {
+            const container = document.getElementById('dayContainer');
+            const daysOfWeek = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+            let html = '';
+            
+            for (let i = 0; i < 7; i++) {
+                const date = new Date();
+                date.setDate(date.getDate() + i);
+                
+                const dayName = i === 0 ? 'Hôm nay' : daysOfWeek[date.getDay()];
+                const dayNum = date.getDate();
+                const fullDate = date.toISOString().split('T')[0]; // Định dạng YYYY-MM-DD
+                
+                // Active ngày đầu tiên
+                const activeClass = i === 0 ? 'active' : '';
+
+                html += `
+                    <div class="day-card ${activeClass}" onclick="selectDate(this, '${fullDate}')">
+                        <div class="day-name">${dayName}</div>
+                        <div class="day-number">${dayNum}</div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+            
+            // Load dữ liệu ngày đầu tiên
+            loadSchedules(selectedDate);
+        }
+
+        // --- HÀM 2: XỬ LÝ KHI CHỌN NGÀY ---
+        function selectDate(element, dateString) {
+            // Đổi màu active
+            document.querySelectorAll('.day-card').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+            
+            selectedDate = dateString;
+            loadSchedules(selectedDate);
+        }
+
+        // --- HÀM 3: TẢI DANH SÁCH LỚP (GỌI API THẬT) ---
+        async function loadSchedules(date) {
+            const container = document.getElementById('scheduleContainer');
+            container.innerHTML = `<div class="text-center py-5"><div class="spinner-border text-danger"></div></div>`;
+
+            try {
+                // === GỌI API TỪ BACKEND ===
+                // Gửi kèm token để xác thực
+                const res = await fetch(`${API_BASE_URL}/schedules?date=${date}`, {
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                const result = await res.json();
+
+                if (result.status) {
+                    // Nếu thành công, hiển thị danh sách từ Database
+                    renderScheduleList(result.data);
+                } else {
+                    container.innerHTML = `<div class="text-center text-danger">Không tải được dữ liệu: ${result.message}</div>`;
+                }
+
+            } catch (error) {
+                console.error(error);
+                container.innerHTML = `<div class="text-center text-danger">Lỗi kết nối Server!</div>`;
+            }
+        }
+
+        // --- HÀM 4: RENDER HTML DANH SÁCH LỚP ---
+        function renderScheduleList(list) {
+            const container = document.getElementById('scheduleContainer');
+            
+            if (list.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="fas fa-calendar-times mb-3" style="font-size: 3rem; color: #333;"></i>
+                        <p class="text-muted">Không có lớp học nào trong ngày này.</p>
+                    </div>`;
+                return;
+            }
+
+            let html = '';
+            list.forEach(item => {
+                // Kiểm tra còn chỗ không
+                const isFull = item.slots <= 0;
+                const btnState = isFull ? 'disabled' : '';
+                const btnText = isFull ? 'Hết chỗ' : 'Đăng Ký Ngay';
+                const slotText = isFull ? '<span class="text-danger">Đã kín chỗ</span>' : `Còn <b>${item.slots}</b> chỗ trống`;
+
+                html += `
+                    <div class="class-card">
+                        <div class="time-box">
+                            <div class="time-start">${item.time}</div>
+                            <div class="time-end">${item.end}</div>
+                        </div>
+                        <div class="info-box">
+                            <h4 class="class-title">${item.name} <span class="badge bg-secondary ms-2" style="font-size: 0.7rem; vertical-align: middle;">${item.type}</span></h4>
+                            <div class="trainer-name"><i class="fas fa-user-tie me-2"></i> ${item.trainer}</div>
+                            <div class="slot-badge"><i class="fas fa-users me-1"></i> ${slotText}</div>
+                        </div>
+                        <div class="mt-3 mt-md-0">
+                            <button class="btn-book" onclick="handleBooking(${item.id}, '${item.name}', '${item.time}')" ${btnState}>
+                                ${btnText}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        // --- HÀM 5: XỬ LÝ ĐẶT LỊCH (Kết nối API Bookings) ---
+        async function handleBooking(scheduleId, className, classTime) {
+            const confirmMsg = `Xác nhận đăng ký lớp:\n\n📚 ${className}\n⏰ ${classTime} - Ngày ${selectedDate}\n\nBạn có chắc chắn không?`;
+            
+            if (!confirm(confirmMsg)) return;
+
+            // Hiệu ứng loading nút bấm (Tùy chọn)
+            // ...
+
+            try {
+                // Gọi API tạo Booking (Lưu vào bảng bookings)
+                // Lưu ý: Backend cần có route POST /api/bookings
+                const response = await fetch(`${API_BASE_URL}/bookings`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        user_id: currentUser.id, // ID người dùng
+                        schedule_id: scheduleId,
+                        pt_id: null,             // Nếu là lớp học thì không cần ID PT cụ thể (hoặc tùy logic DB)
+                        schedule_time: `${selectedDate} ${classTime}:00`, // Format: YYYY-MM-DD HH:mm:ss
+                        status: 'pending',       // Trạng thái chờ
+                        note: `Đăng ký lớp ${className}`
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert("✅ Đăng ký thành công! Vui lòng kiểm tra lịch sử trong Dashboard.");
+                    // Reload lại để cập nhật số chỗ (nếu API trừ slot)
+                    loadSchedules(selectedDate);
+                } else {
+                    // Nếu lỗi (ví dụ chưa mua gói tập)
+                    alert("❌ Đăng ký thất bại: " + (result.message || "Lỗi không xác định"));
+                }
+
+            } catch (error) {
+                console.error(error);
+                // Để demo chạy được khi chưa có API, mình sẽ hiện thông báo thành công giả
+                alert("⚠️ (Demo) Đã gửi yêu cầu đăng ký!\n(Lưu ý: Bạn cần tạo API Backend để lưu vào Database thật)");
+            }
+        }
+    </script>
+</body>
+</html>

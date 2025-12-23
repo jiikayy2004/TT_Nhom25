@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chi tiết bài viết - GymKayy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background-color: #000; color: #eee; font-family: 'Segoe UI', sans-serif; }
+        
+        .post-box { 
+            background: #111; 
+            max-width: 900px; 
+            margin: 50px auto; 
+            padding: 40px; 
+            border-radius: 30px; 
+            border: 1px solid #222;
+        }
+
+        .content-body { line-height: 1.8; font-size: 1.1rem; color: #ccc; }
+        .content-body img { 
+            width: 100%; 
+            border-radius: 15px; 
+            margin: 25px 0; 
+            border: 1px solid #333;
+        }
+        .content-body h3 { 
+            color: #ff2d55; 
+            margin-top: 40px; 
+            font-weight: bold; 
+            text-transform: uppercase;
+        }
+        .content-body h4 { color: #fff; margin-top: 30px; font-weight: 600; }
+        
+        .btn-back {
+            color: #ff2d55;
+            border: 1px solid #ff2d55;
+            padding: 10px 25px;
+            text-decoration: none;
+            display: inline-block;
+            border-radius: 50px;
+            transition: 0.3s;
+        }
+        .btn-back:hover {
+            background: #ff2d55;
+            color: #fff;
+        }
+
+        .category-label {
+            background: #ff2d55;
+            color: #fff;
+            padding: 5px 15px;
+            border-radius: 5px;
+            font-size: 12px;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="postArea" class="post-box">
+        <div class="text-center py-5">
+            <div class="spinner-border text-danger" role="status"></div>
+            <p class="mt-2">Đang tải bài viết...</p>
+        </div>
+    </div>
+</div>
+
+<script src="./assets/js/data.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const area = document.getElementById('postArea');
+        
+        // 1. Kiểm tra xem biến articles từ data.js có tồn tại không
+        if (typeof articles === 'undefined') {
+            area.innerHTML = `<h2 class="text-center text-danger">Lỗi: Không tìm thấy dữ liệu bài viết (data.js).</h2>`;
+            return;
+        }
+
+        // 2. Lấy ID từ URL
+        const params = new URLSearchParams(window.location.search);
+        const idFromUrl = params.get('id'); 
+
+        if (!idFromUrl) {
+            area.innerHTML = `<h2 class="text-center text-danger">Lỗi: Không có ID bài viết trên URL.</h2>`;
+            return;
+        }
+
+        // 3. Tìm bài viết và ép kiểu để so sánh chính xác
+        const item = articles.find(a => a.id === parseInt(idFromUrl)); 
+
+        if (item) {
+            // Đổ dữ liệu vào giao diện
+            area.innerHTML = `
+                <div class="category-label">${item.tag}</div>
+                <h1 class="fw-bold mb-3" style="color: #fff; letter-spacing: -1px;">${item.title}</h1>
+                <p class="text-muted small"><i class="far fa-calendar-alt me-2"></i>${item.date}</p>
+                <hr style="border-color: #333;">
+                <div class="content-body">
+                    ${item.content}
+                </div>
+                <div class="mt-5 pt-4 border-top" style="border-color: #222;">
+                    <a href="kien-thuc.html" class="btn-back">
+                        <i class="fas fa-arrow-left me-2"></i>Quay lại danh sách
+                    </a>
+                </div>
+            `;
+            // Cập nhật tiêu đề trang
+            document.title = item.title + " - GymKayy";
+        } else {
+            area.innerHTML = `
+                <div class="text-center py-5">
+                    <h2 class="text-danger">404 - Không tìm thấy bài viết</h2>
+                    <p>Bài viết có ID: <b>${idFromUrl}</b> không tồn tại trong hệ thống.</p>
+                    <a href="kien-thuc.html" class="btn-back mt-3">Quay lại danh sách</a>
+                </div>
+            `;
+        }
+    });
+</script>
+</body>
+</html>

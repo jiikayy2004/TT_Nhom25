@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Lớp Học - Gym Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="./styleadmin.css">
+    <style>
+        .table-custom th { font-weight: 600; color: #555; }
+        .table-custom td { vertical-align: middle; }
+        .card-form { background: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border: none; }
+        /* Style cho avatar trong modal */
+        .member-avatar { width: 35px; height: 35px; background: #e9ecef; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #6c757d; font-weight: bold; margin-right: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="wrapper">
+        <nav id="sidebar">
+            <a href="../../index.html" class="logo">
+                <div class="logo-icon">920</div>
+                <div class="logo-text">Gym<span>Kayy</span></div>
+            </a>
+
+            <ul class="list-unstyled components">
+                <li><a href="dashboard.html"><i class="fas fa-chart-pie"></i> Tổng Quan</a></li>
+                <li><a href="users.html"><i class="fas fa-users"></i> Hội Viên</a></li>
+                <li><a href="packages.html"><i class="fas fa-box"></i> Gói Tập</a></li>
+                <li><a href="subscriptions.html"><i class="fas fa-file-invoice"></i> Đăng Ký</a></li>
+                <li><a href="bookings.html"><i class="fas fa-calendar-check"></i> Lịch Tập PT</a></li>
+                <li class="active"><a href="schedules.html"><i class="fas fa-chalkboard-teacher"></i> Lớp Học</a></li>
+                <li><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Đăng Xuất</a></li>
+            </ul>
+        </nav>
+
+        <div id="content">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold text-dark">Quản Lý Lớp Học Nhóm</h2>
+                <button class="btn btn-primary" onclick="toggleAddForm()">
+                    <i class="fas fa-plus"></i> Tạo Lớp Mới
+                </button>
+            </div>
+
+            <div class="card card-form mb-4" id="addFormCard" style="display: none;">
+                <div class="card-body">
+                    <h5 class="card-title text-primary mb-3"><i class="fas fa-pen-fancy"></i> Thông Tin Lớp Học</h5>
+                    <form id="addScheduleForm" class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small text-muted">Tên Lớp</label>
+                            <input type="text" class="form-control" id="name" placeholder="VD: Yoga Sáng" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold small text-muted">Bộ Môn</label>
+                            <select class="form-select" id="type">
+                                <option value="Yoga">Yoga</option>
+                                <option value="Cardio">Cardio</option>
+                                <option value="Boxing">Boxing</option>
+                                <option value="Gym">Gym</option>
+                                <option value="Zumba">Zumba</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small text-muted">HLV Phụ Trách</label>
+                            <select class="form-select" id="trainer" required>
+                                <option value="">-- Đang tải... --</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small text-muted">Thời Gian Bắt Đầu</label>
+                            <input type="datetime-local" class="form-control" id="start_time" required>
+                        </div>
+                        <div class="col-md-1 d-flex align-items-end">
+                            <button type="submit" class="btn btn-success w-100"><i class="fas fa-save"></i></button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card card-form border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="p-3 border-bottom d-flex justify-content-between align-items-center bg-white rounded-top">
+                        <span class="fw-bold text-muted"><i class="fas fa-list"></i> Danh Sách Lớp Trong Ngày</span>
+                        <div class="d-flex gap-2">
+                            <input type="date" id="filterDate" class="form-control form-control-sm w-auto" onchange="loadAdminSchedules()">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="loadAdminSchedules()"><i class="fas fa-sync-alt"></i></button>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover table-custom align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4">ID</th>
+                                    <th>Tên Lớp / Bộ Môn</th>
+                                    <th>HLV Phụ Trách</th>
+                                    <th>Thời Gian</th>
+                                    <th>Sĩ Số</th>
+                                    <th class="text-end pe-4">Hành Động</th>
+                                </tr>
+                            </thead>
+                            <tbody id="scheduleTableBody">
+                                <tr><td colspan="6" class="text-center py-5 text-muted">Đang tải dữ liệu...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="membersModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Danh Sách Đăng Ký - <span id="modalClassName" class="text-primary"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">#</th>
+                                <th>Hội Viên</th>
+                                <th>Số Điện Thoại</th>
+                                <th>Ngày Đăng Ký</th>
+                            </tr>
+                        </thead>
+                        <tbody id="memberListBody">
+                            </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API_BASE_URL = 'http://localhost/QLPG/public/api';
+        const token = localStorage.getItem('gym_token');
+
+        if (!token) window.location.href = '../../login.html';
+
+        document.getElementById('filterDate').valueAsDate = new Date();
+
+        function toggleAddForm() {
+            const form = document.getElementById('addFormCard');
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // 1. Tải danh sách lớp
+        async function loadAdminSchedules() {
+            const date = document.getElementById('filterDate').value;
+            const tbody = document.getElementById('scheduleTableBody');
+            
+            try {
+                const res = await fetch(`${API_BASE_URL}/schedules?date=${date}`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const result = await res.json();
+
+                if(result.status && result.data.length > 0) {
+                    let html = '';
+                    result.data.forEach(item => {
+                        const slotClass = item.slots > 0 ? 'bg-success' : 'bg-danger';
+                        const slotText = item.slots > 0 ? `Còn ${item.slots}` : 'Hết chỗ';
+                        const timeStart = item.time.substring(0, 5); 
+                        const timeEnd = item.end.substring(0, 5);
+
+                        // Thêm nút Mắt (Xem chi tiết)
+                        html += `
+                            <tr>
+                                <td class="ps-4 text-muted">#${item.id}</td>
+                                <td>
+                                    <div class="fw-bold text-dark">${item.name}</div>
+                                    <span class="badge bg-light text-secondary border">${item.type}</span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-light rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
+                                            <i class="fas fa-user-tie text-primary"></i>
+                                        </div>
+                                        <span class="fw-bold text-dark">${item.trainer}</span>
+                                    </div>
+                                </td>
+                                <td><div class="text-muted"><i class="far fa-clock me-1"></i> ${timeStart} - ${timeEnd}</div></td>
+                                <td><span class="badge ${slotClass}">${slotText} / ${item.max_slots}</span></td>
+                                <td class="text-end pe-4">
+                                    <button class="btn btn-sm btn-info text-white me-1" onclick="viewClassMembers(${item.id}, '${item.name}')" title="Xem danh sách">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteSchedule(${item.id})" title="Xóa lớp">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </td>
+                            </tr>`;
+                    });
+                    tbody.innerHTML = html;
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted"><i class="fas fa-calendar-times fa-2x mb-3 d-block text-secondary"></i>Không có lớp nào trong ngày này.</td></tr>`;
+                }
+            } catch (error) {
+                console.error(error);
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-danger">Lỗi kết nối Server!</td></tr>`;
+            }
+        }
+
+        // 2. Tải danh sách PT
+        async function loadPTList() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/users`, { headers: { 'Authorization': 'Bearer ' + token } });
+                const result = await res.json();
+                if(result.status) {
+                    const select = document.getElementById('trainer');
+                    const pts = result.data.filter(u => u.role === 'pt');
+                    select.innerHTML = '<option value="">-- Chọn HLV --</option>';
+                    pts.forEach(pt => { select.innerHTML += `<option value="${pt.name}">${pt.name}</option>`; });
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        // 3. Xử lý Thêm Mới
+        document.getElementById('addScheduleForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const start_time = document.getElementById('start_time').value;
+            let endObj = new Date(start_time);
+            endObj.setHours(endObj.getHours() + 1);
+            const tzOffset = endObj.getTimezoneOffset() * 60000;
+            const end_time = (new Date(endObj - tzOffset)).toISOString().slice(0, 19).replace('T', ' ');
+
+            const payload = {
+                name: document.getElementById('name').value,
+                type: document.getElementById('type').value,
+                trainer: document.getElementById('trainer').value,
+                start_time: start_time,
+                end_time: end_time,
+                max_slots: 20
+            };
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/schedules`, {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if(res.ok && data.status) {
+                    alert("✅ Tạo lớp thành công!");
+                    const createdDate = start_time.split('T')[0];
+                    document.getElementById('filterDate').value = createdDate;
+                    toggleAddForm(); loadAdminSchedules(); document.getElementById('addScheduleForm').reset();
+                } else { alert("⚠️ " + (data.message || "Lỗi Server")); }
+            } catch(e) { alert("Lỗi kết nối đến Server!"); }
+        });
+
+        // 4. Xóa
+        async function deleteSchedule(id) {
+            if(!confirm("Bạn có chắc chắn muốn xóa lớp học này không?")) return;
+            try {
+                const res = await fetch(`${API_BASE_URL}/schedules/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if(res.ok) { alert("Đã xóa thành công!"); loadAdminSchedules(); }
+                else { alert("Xóa thất bại!"); }
+            } catch(e) { alert("Lỗi kết nối!"); }
+        }
+
+        // 5. [MỚI] XEM DANH SÁCH HỘI VIÊN
+        async function viewClassMembers(id, className) {
+            document.getElementById('modalClassName').innerText = className;
+            const tbody = document.getElementById('memberListBody');
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center py-3">Đang tải...</td></tr>`;
+            
+            // Hiện Modal
+            const modal = new bootstrap.Modal(document.getElementById('membersModal'));
+            modal.show();
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/schedules/${id}/members`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const result = await res.json();
+
+                if(result.status && result.data.length > 0) {
+                    tbody.innerHTML = '';
+                    result.data.forEach((booking, index) => {
+                        const user = booking.user;
+                        const date = new Date(booking.created_at).toLocaleString('vi-VN');
+                        const avatarLetter = user.name.charAt(0).toUpperCase();
+
+                        tbody.innerHTML += `
+                            <tr>
+                                <td class="ps-4 fw-bold text-muted">${index + 1}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="member-avatar">${avatarLetter}</div>
+                                        <span class="fw-bold text-dark">${user.name}</span>
+                                    </div>
+                                </td>
+                                <td>${user.phone || '<span class="text-muted small">Chưa cập nhật</span>'}</td>
+                                <td class="small text-muted">${date}</td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-muted">Chưa có hội viên nào đăng ký lớp này.</td></tr>`;
+                }
+            } catch (e) {
+                console.error(e);
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center py-3 text-danger">Lỗi tải dữ liệu!</td></tr>`;
+            }
+        }
+
+        function logout() { localStorage.removeItem('gym_token'); localStorage.removeItem('gym_user'); window.location.href = '../../login.html'; }
+
+        loadAdminSchedules();
+        loadPTList();
+        document.getElementById('sidebarCollapse')?.addEventListener('click', function () { document.getElementById('sidebar').classList.toggle('active'); });
+    </script>
+</body>
+</html>

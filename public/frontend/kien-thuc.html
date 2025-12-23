@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Kiến Thức Tập Luyện - GymKayy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="./assets/css/style.css">
+    <style>
+        body { background-color: #000; color: #fff; font-family: 'Segoe UI', sans-serif; }
+        
+        /* Tab Filter Concept GymKayy */
+        .filter-wrapper {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: inline-flex;
+            gap: 10px;
+        }
+        .btn-category {
+            background: transparent;
+            color: #aaa;
+            border: none;
+            padding: 8px 25px;
+            border-radius: 40px;
+            font-weight: 600;
+            transition: 0.3s;
+            white-space: nowrap;
+        }
+        .btn-category.active {
+            background: #ff2d55; /* Màu đỏ chủ đạo của GymKayy */
+            color: #fff;
+        }
+
+        /* Card bài viết */
+        .article-card {
+            background: #111;
+            border-radius: 20px;
+            border: 1px solid #222;
+            overflow: hidden;
+            transition: 0.3s;
+            cursor: pointer;
+            height: 100%;
+        }
+        .article-card:hover {
+            transform: translateY(-10px);
+            border-color: #ff2d55;
+        }
+        .img-container { height: 200px; overflow: hidden; position: relative; }
+        .img-container img { width: 100%; height: 100%; object-fit: cover; }
+        .tag-badge {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: #ff2d55;
+            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 5px;
+        }
+        .article-body { padding: 20px; }
+        .article-title { font-size: 16px; font-weight: bold; line-height: 1.4; height: 45px; overflow: hidden; }
+        .read-more { color: #ff2d55; text-decoration: none; font-size: 13px; font-weight: bold; }
+    </style>
+</head>
+<body>
+ <header>
+        <nav>
+            <a href="index.html" class="logo">
+                <div class="logo-icon">920</div>
+                <div class="logo-text">Gym<span>Kayy</span></div>
+            </a>
+
+            <ul class="nav-menu">
+                <li><a href="index.html" class="active">Trang chủ</a></li>
+                <li><a href="kien-thuc.html" class="active" style="color: #ff2d55;">Kiến thức tập luyện</a></li>
+                <li><a href="promotions.html">Khuyến mãi <span style="font-size: 10px; background: #dc3545; padding: 2px 5px; border-radius: 4px; vertical-align: top;">HOT</span></a></li>
+                <li id="menu-my-package" style="display: none;">
+                    <a href="pages/member/dashboard.html" >
+                        <i class="fas fa-crown"></i> Gói Tập Của Tôi
+                    </a>
+                </li>
+                <li id="menu-schedule" style="display: none;">
+                    <a href="pages/member/schedule.html">
+                        <i class="fas fa-calendar-days"></i> Lịch tập
+                    </a>
+                </li>
+                <li id="menu-profile" style="display: none;">
+                    <a href="pages/member/profile.html">
+                        <i class="fas fa-user-circle"></i> Tôi
+                    </a>
+                </li>
+            </ul>
+
+            <div id="auth-section">
+                <a href="login.html" class="btn-login">Đăng nhập</a>
+            </div>
+        </nav>
+    </header>
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h2 class="fw-bold">TẬP LUYỆN HIỆU QUẢ CÙNG <span style="color: #ff2d55;">GYMKAYY</span></h2>
+    </div>
+
+    <div class="text-center mb-5">
+        <div class="filter-wrapper">
+            <button class="btn-category active" onclick="changeGroup('all', this)">Mới nhất</button>
+            <button class="btn-category" onclick="changeGroup('beginner', this)">Người mới</button>
+            <button class="btn-category" onclick="changeGroup('mindset', this)">Tinh thần</button>
+            <button class="btn-category" onclick="changeGroup('knowledge', this)">Kiến thức</button>
+            <button class="btn-category" onclick="changeGroup('nutrition', this)">Dinh dưỡng</button>
+            <button class="btn-category" onclick="changeGroup('guide', this)">Hướng dẫn</button>
+        </div>
+    </div>
+
+    <div class="row g-4" id="articleGrid">
+        </div>
+</div>
+
+<script>
+   const articles = [
+    // --- NHÓM: NGƯỜI MỚI (beginner) ---
+    // Giả sử tên ảnh của bạn là beginner1.jpg, beginner2.jpg...
+    { id: 19, group: 'beginner', title: 'TRX Là Gì? 3 Bài Tập Với Dây TRX Cho Người Mới', img: './assets/img/id18.jpg', tag: 'Người mới' },
+    { id: 20, group: 'beginner', title: '‘Hack’ Hít Xà Với 3 Bước Cho Người Mới Bắt Đầu', img: './assets/img/id19.jpg', tag: 'Người mới' },
+    { id: 21, group: 'beginner', title: 'Leg Day Là Gì? Cẩm Nang Leg Day Cho Người Mới Bắt Đầu', img: './assets/img/id20.webp', tag: 'Người mới' },
+    { id: 22, group: 'beginner', title: '5 Bước Trở Thành Vận Động Viên Chạy (Runner) Cho Người Mới Bắt Đầu', img: './assets/img/id21.webp', tag: 'Người mới' },
+    { id: 23, group: 'beginner', title: 'Giảm Đau Mỏi Cổ Tay Vai Gáy Ngay Lập Tức Với 6 Bài Giãn Cơ Tay Đơn Giản', img: './assets/img/id22.webp', tag: 'Người mới' },
+    { id: 24, group: 'beginner', title: 'Top 7 Bài Tập Tay Trước Tốt Nhất Cho Người Mới Bắt Đầu', img: './assets/img/id23.webp', tag: 'Người mới' },
+    // --- NHÓM: TINH THẦN (mindset) ---
+    { id: 25, group: 'mindset', title: '4 Mẹo Rèn Luyện Sự Tập Trung Khiến 100% Tâm Trí Đặt Vào Buổi Tập Luyện', img: './assets/img/id24.png', tag: 'Tinh thần' },
+    { id: 26, group: 'mindset', title: 'Top 5 Các Bài Tập Giãn Cơ Nhanh Đánh Bay Căng Thẳng Tốt Nhất', img: './assets/img/id22.webp', tag: 'Tinh thần' },
+    { id: 27, group: 'mindset', title: '10 Cách Giảm Căng Thẳng Lo Âu Tốt Nhất, Giúp Bạn Tìm Lại Sự Bình Tĩnh', img: './assets/img/id25.jpg', tag: 'Tinh thần' },
+    { id: 28, group: 'mindset', title: '5 Lý Do Khiến Việc Nghỉ Ngơi Giúp Bạn Đốt Mỡ Nhanh Hơn', img: './assets/img/id26.png', tag: 'Tinh thần' },
+    { id: 29, group: 'mindset', title: 'Gợi Ý Quà Cho Ngày Của Cha: Trao Yêu Thương Qua Từng Nhịp Tập', img: './assets/img/id27.webp', tag: 'Tinh thần' },
+    { id: 30, group: 'mindset', title: '6 Thói Quen Tốt Mang Lại Thay Đổi Tích Cực Cho Sức Khỏe Của Bạn', img: './assets/img/id28.png', tag: 'Tinh thần' },
+    // --- NHÓM: KIẾN THỨC (knowledge) ---
+    // Ví dụ bài 13 bạn đặt tên ảnh là id13.jpg
+    { id: 1, group: 'knowledge', title: '4 Bước vệ sinh tai nghe sau khi tập luyện', img: './assets/img/id1.jpg', tag: 'Kiến thức' },
+    { id: 2, group: 'knowledge', title: '5 lợi ích "Đỉnh Nóc" của việc tập thể dục - Không chỉ để "Độ Dáng"', img: './assets/img/id2.webp', tag: 'Kiến thức' },
+    { id: 3, group: 'knowledge', title: 'Các “Top Trending” Tập Luyện Dẫn Đầu Năm 2025 Mà Bạn Nhất Định Phải Thử!', img: './assets/img/id3.webp', tag: 'Kiến thức' },
+    { id: 4, group: 'knowledge', title: 'Top Thực Phẩm Bổ Não Tốt Nhất Giúp Vượt Qua Cơn Uể Oải', img: './assets/img/id4.jpg', tag: 'Kiến thức' },
+    { id: 5, group: 'knowledge', title: '4 Mẹo Rèn Luyện Sự Tập Trung Khiến 100% Tâm Trí Đặt Vào Buổi Tập Luyện', img: './assets/img/id5.jpg', tag: 'Kiến thức' },
+    { id: 6, group: 'knowledge', title: 'Pickleball: Luật Chơi và 5 Bài Tập Nâng Tầm Kỹ Năng', img: './assets/img/id6.jpg', tag: 'Kiến thức' },
+    // --- NHÓM: DINH DƯỠNG (nutrition) ---
+    { id: 7, group: 'nutrition', title: 'Top thực phẩm bổ não giúp vượt qua uể oải', img: './assets/img/id4.jpg', tag: 'Dinh dưỡng' },
+    { id: 8, group: 'nutrition', title: '6 Công Thức Đồ Nướng BBQ Lành Mạnh Cho Tiệc Ngoài Trời', img: './assets/img/id7.jpg', tag: 'Dinh dưỡng' },
+    { id: 9, group: 'nutrition', title: '4 Công Thức “Giải Cứu” Cơn Thèm Khoai Tây Chiên Mà Không Cần Chiên', img: './assets/img/id8.jpg', tag: 'Dinh dưỡng' },
+    { id: 10, group: 'nutrition', title: 'Ăn Gì Không Béo? Bí Quyết Ăn ‘Hàng’ Không Lo ‘Hỏng’ Dáng', img: './assets/img/id9.png', tag: 'Dinh dưỡng' },
+    { id: 11, group: 'nutrition', title: 'Cà Phê: Nhiên Liệu Hay Kẻ Thù Cho Buổi Tập Của Bạn?', img: './assets/img/11.1.webp', tag: 'Dinh dưỡng' },
+    { id: 12, group: 'nutrition', title: 'Loại Bỏ Cơn Đói Sau Giờ Làm Với 3 Công Thức Meal Prep Đơn Giản', img: './assets/img/id11.jpg', tag: 'Dinh dưỡng' },
+
+    // --- NHÓM: HƯỚNG DẪN (guide) ---
+    { id: 13, group: 'guide', title: '6 Bài Tập Đứng Chống Lại Tác Hại Của Việc Ngồi Nhiều: Cứu Cánh Cho Dân Văn Phòng', img: './assets/img/id12.jpg', tag: 'Hướng dẫn' },
+    { id: 14, group: 'guide', title: '2 Lộ Trình Giảm Mỡ Cấp Tốc: Chỉ 10 Phút Với Các Bài Tập Bụng Hiệu Quả Nhất', img: './assets/img/id13.webp', tag: 'Hướng dẫn' },
+    { id: 15, group: 'guide', title: 'Tại Sao ‘Tín Đồ’ Gym Cardio Không Thể Bỏ Qua Tập Tạ?', img: './assets/img/id14.jpg', tag: 'Hướng dẫn' },
+    { id: 16, group: 'guide', title: 'Không Có Thời Gian? 2 Lộ Trình Tập Gym 20 – 30 Phút Hiệu Quả', img: './assets/img/id15.webp', tag: 'Hướng dẫn' },
+    { id: 17, group: 'guide', title: '5 Bước Trở Thành Vận Động Viên Chạy (Runner) Cho Người Mới Bắt Đầu', img: './assets/img/id16.webp', tag: 'Hướng dẫn' },
+    { id: 18, group: 'guide', title: 'Top Các Bài Tập Với Tạ Cho Nữ: Sở Hữu Đôi Thân Hình Mảnh Mai Nhưng Vẫn Săn Chắc', img: './assets/img/id17.jpg', tag: 'Hướng dẫn' }
+];
+
+function changeGroup(groupName, btn) {
+    // 1. Cập nhật nút active (Màu đỏ GymKayy)
+    document.querySelectorAll('.btn-category').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    // 2. Lọc danh sách bài viết theo nhóm
+    const grid = document.getElementById('articleGrid');
+    grid.innerHTML = ''; 
+
+    // Nếu chọn 'all', ta lấy 6 bài mới nhất (6 bài cuối trong danh sách)
+    // Nếu chọn category, ta lấy đúng 6 bài của category đó
+    let filtered = groupName === 'all' 
+        ? [...articles].reverse().slice(0, 6) 
+        : articles.filter(a => a.group === groupName);
+    
+    // Hiển thị dữ liệu ra màn hình
+    filtered.forEach(item => {
+        grid.innerHTML += `
+            <div class="col-md-4 mb-4">
+                <div class="article-card" onclick="location.href='article-detail.html?id=${item.id}'">
+                    <div class="img-container">
+                        <img src="${item.img}" alt="gym">
+                        <span class="tag-badge">${item.tag}</span>
+                    </div>
+                    <div class="article-body">
+                        <div class="article-title">${item.title}</div>
+                        <span class="read-more">Đọc tiếp <i class="fas fa-chevron-right"></i></span>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+}
+
+// Khởi tạo hiển thị 6 bài mới nhất khi load trang
+window.onload = () => {
+    changeGroup('all', document.querySelector('.btn-category.active'));
+};
+</script>
+
+</body>
+</html>

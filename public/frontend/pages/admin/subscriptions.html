@@ -12,20 +12,31 @@
 <body>
 
     <nav id="sidebar">
-            <a href="./index.html" class="logo">
+             <a href="../../index.html" class="logo">
                 <div class="logo-icon">920</div>
                 <div class="logo-text">Gym<span>Kayy</span></div>
             </a>
 
-            <ul class="list-unstyled components">
-                <li><a href="dashboard.html" class="active"><i class="fas fa-chart-pie"></i> Tổng Quan</a></li>
-                <li><a href="users.html"><i class="fas fa-users"></i> Hội Viên</a></li>
-                <li><a href="packages.html"><i class="fas fa-box"></i> Gói Tập</a></li>
-                <li><a href="subscriptions.html"><i class="fas fa-file-invoice"></i> Đăng Ký</a></li>
-                
-                <li><a href="bookings.html"><i class="fas fa-calendar-alt"></i> Lịch Tập PT</a></li>
-                <li><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Đăng Xuất</a></li>
-            </ul>
+           <ul class="list-unstyled components">
+    <li><a href="dashboard.html"><i class="fas fa-chart-pie"></i> Tổng Quan</a></li>
+    <li><a href="users.html"><i class="fas fa-users"></i> Hội Viên</a></li>
+    <li><a href="packages.html"><i class="fas fa-box"></i> Gói Tập</a></li>
+    <li><a href="subscriptions.html"><i class="fas fa-file-invoice"></i> Đăng Ký</a></li>
+    
+    <li>
+        <a href="bookings.html">
+            <i class="fas fa-calendar-check"></i> Lịch Tập PT
+        </a>
+    </li>
+
+    <li>
+        <a href="schedules.html">
+            <i class="fas fa-chalkboard-teacher"></i> Lớp Học
+        </a>
+    </li>
+
+    <li><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Đăng Xuất</a></li>
+</ul>
         </nav>
 
     <div id="content">
@@ -111,7 +122,7 @@
             tbody.innerHTML = '';
             
             if (!subs || subs.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center">Chưa có dữ liệu đăng ký nào.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center">Chưa có dữ liệu đăng ký nào.</td></tr>`;
                 return;
             }
 
@@ -119,7 +130,6 @@
                 // Kiểm tra xem đã hết hạn chưa để đổi màu
                 const endDate = new Date(sub.end_date);
                 const today = new Date();
-                // Nếu ngày hết hạn nhỏ hơn hôm nay -> Đã hết hạn
                 const isExpired = endDate < today;
                 
                 const statusBadge = isExpired 
@@ -134,6 +144,11 @@
                         <td>${sub.start_date}</td>
                         <td class="fw-bold">${sub.end_date}</td>
                         <td>${statusBadge}</td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" onclick="deleteSubscription(${sub.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
                     </tr>`;
             });
         }
@@ -202,12 +217,42 @@
                 }
             } catch (e) { alert("Lỗi kết nối!"); }
         }
+        // --- HÀM 4: XÓA ĐĂNG KÝ ---
+        async function deleteSubscription(id) {
+            if (!confirm('⚠️ Cảnh báo: Bạn có chắc chắn muốn xóa đơn đăng ký này không?\nDữ liệu sẽ không thể khôi phục!')) {
+                return;
+            }
+
+            try {
+                // Sửa lại đường dẫn API nếu cần thiết
+                const response = await fetch(`http://localhost/QLPG/public/api/subscriptions/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.status) {
+                    alert("✅ Đã xóa thành công!");
+                    fetchSubscriptions(); // Tải lại bảng để cập nhật
+                } else {
+                    alert("❌ Lỗi: " + (result.message || "Không thể xóa"));
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Lỗi kết nối đến Server!");
+            }
+        }                               
 
         function logout() { localStorage.removeItem('gym_token'); window.location.href = '../../login.html'; }
 
         // --- CHẠY KHI VÀO TRANG ---
         fetchSubscriptions();
         loadOptions(); // Tải sẵn danh sách User/Package vào dropdown luôn cho mượt
+        
     </script>
 </body>
 </html>

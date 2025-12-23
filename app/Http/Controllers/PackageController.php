@@ -22,30 +22,30 @@ class PackageController extends Controller
     }
 
     // --- 2. HÀM TẠO GÓI TẬP MỚI ---
-    public function store(Request $request)
+   public function store(Request $request)
     {
-        // Bước 1: Kiểm tra dữ liệu gửi lên (Validate)
         $request->validate([
-            'name' => 'required|string',       // Tên gói: Bắt buộc, là chữ
-            'price' => 'required|numeric',     // Giá tiền: Bắt buộc, là số
-            'duration_days' => 'required|integer' // Thời hạn (ngày): Bắt buộc, số nguyên
-        ], [
-            
+            'name' => 'required|string',
+            'price' => 'required|numeric',
+            'duration_days' => 'required|integer' // Validate đúng tên này
         ]);
 
-        // Bước 2: Lưu vào Database
-        $package = Package::create([
-            'name' => $request->name,
-            'price' => $request->price,
-            'duration_days' => $request->duration_days
-        ]);
+        try {
+            $package = Package::create([
+                'name' => $request->name,
+                'price' => $request->price,
+                // Cột trong DB (bên trái) => Dữ liệu từ Frontend (bên phải)
+                'duration_days' => $request->duration_days 
+            ]);
 
-        // Bước 3: Báo thành công
-        return response()->json([
-            'status' => true,
-            'message' => 'Thêm gói tập thành công!',
-            'data' => $package
-        ]);
+            return response()->json([
+                'status' => true,
+                'message' => 'Thêm gói tập thành công!',
+                'data' => $package
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
+        }
     }
 
     // --- 3. HÀM XÓA GÓI TẬP ---

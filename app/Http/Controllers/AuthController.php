@@ -9,61 +9,66 @@ use App\Models\User;
 
 class AuthController extends Controller
 {
-    // Hàm xử lý đăng nhập
+    // ==========================================
+    // 1. XỬ LÝ ĐĂNG NHẬP
+    // ==========================================
     public function login(Request $request)
     {
-        // 1. Kiểm tra dữ liệu gửi lên (Validate)
+        // A. Validate dữ liệu
         $request->validate([
             'email' => 'required|email',
             'password' => 'required',
         ]);
 
-        // 2. Kiểm tra Email và Password có khớp trong Database không
-        // Auth::attempt sẽ tự động mã hóa password gửi lên và so sánh với password trong DB
+        // B. Kiểm tra thông tin đăng nhập
         if (!Auth::attempt($request->only('email', 'password'))) {
             return response()->json([
                 'status' => false,
                 'message' => 'Email hoặc mật khẩu không chính xác!',
-            ], 401); // 401: Unauthorized (Không được phép)
+            ], 401);
         }
 
-        // 3. Nếu đúng, lấy thông tin user
+        // C. Lấy thông tin User
         $user = User::where('email', $request->email)->first();
 
-        // 4. Tạo Token (Chìa khóa bảo mật)
-        // Token này sẽ dùng để gọi các API khác sau này
+        // D. Tạo Token
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        // 5. Trả về kết quả cho Frontend
+        // E. Trả về kết quả
         return response()->json([
             'status' => true,
             'message' => 'Đăng nhập thành công',
             'access_token' => $token,
             'token_type' => 'Bearer',
-            'data' => $user // Trả về cả thông tin user (role, name...)
+            'data' => $user
         ], 200);
     }
-    // ---  Hàm xử lý đăng ký ---
+
+    // ==========================================
+    // 2. XỬ LÝ ĐĂNG KÝ
+    // ==========================================
     public function register(Request $request)
     {
-        // 1. Validate dữ liệu
+        // A. Validate dữ liệu (Đã thêm address)
         $fields = $request->validate([
             'name' => 'required|string',
-            'email' => 'required|string|unique:users,email', // Check trùng email
-            'password' => 'required|string|confirmed', // Bắt buộc có nhập lại mật khẩu (password_confirmation)
-            'phone' => 'nullable|string'
+            'email' => 'required|string|email|unique:users,email',
+            'password' => 'required|string|confirmed|min:6', // Tối thiểu 6 ký tự cho an toàn
+            'phone' => 'nullable|string',
+            'address' => 'nullable|string' // <-- MỚI THÊM
         ]);
 
-        // 2. Tạo User mới vào Database
+        // B. Tạo User mới
         $user = User::create([
             'name' => $fields['name'],
             'email' => $fields['email'],
-            'password' => Hash::make($fields['password']), // Mã hóa mật khẩu
+            'password' => Hash::make($fields['password']),
             'phone' => $fields['phone'] ?? null,
-            'role' => 'member', // Mặc định đăng ký mới là Hội viên (Member)
+            'address' => $fields['address'] ?? null, // <-- MỚI THÊM
+            'role' => 'member', // Mặc định là Member
         ]);
 
-        // 3. Tạo Token luôn (để đăng ký xong tự đăng nhập luôn)
+        // C. Tạo Token luôn để user không phải đăng nhập lại
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
@@ -75,10 +80,20 @@ class AuthController extends Controller
         ], 201);
     }
 
-
-    // Hàm đăng xuất (Làm sau)
-    public function logout()
+    // ==========================================
+    // 3. XỬ LÝ ĐĂNG XUẤT
+    // ==========================================
+    public function logout(Request $request)
     {
-        // ...
+        // Xóa Token hiện tại đang dùng (các thiết bị khác vẫn đăng nhập bình thường)
+        $request->user()->currentAccessToken()->delete();
+
+        // Nếu muốn đăng xuất khỏi TẤT CẢ thiết bị thì dùng:
+        // $request->user()->tokens()->delete();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Đăng xuất thành công!'
+        ]);
     }
 }

@@ -12,20 +12,31 @@
     <div class="wrapper">
 
     <nav id="sidebar">
-            <a href="./index.html" class="logo">
+            <a href="../../index.html" class="logo">
                 <div class="logo-icon">920</div>
                 <div class="logo-text">Gym<span>Kayy</span></div>
             </a>
 
             <ul class="list-unstyled components">
-                <li><a href="dashboard.html" class="active"><i class="fas fa-chart-pie"></i> Tổng Quan</a></li>
-                <li><a href="users.html"><i class="fas fa-users"></i> Hội Viên</a></li>
-                <li><a href="packages.html"><i class="fas fa-box"></i> Gói Tập</a></li>
-                <li><a href="subscriptions.html"><i class="fas fa-file-invoice"></i> Đăng Ký</a></li>
-                
-                <li><a href="bookings.html"><i class="fas fa-calendar-alt"></i> Lịch Tập PT</a></li>
-                <li><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Đăng Xuất</a></li>
-            </ul>
+    <li><a href="dashboard.html"><i class="fas fa-chart-pie"></i> Tổng Quan</a></li>
+    <li><a href="users.html"><i class="fas fa-users"></i> Hội Viên</a></li>
+    <li><a href="packages.html"><i class="fas fa-box"></i> Gói Tập</a></li>
+    <li><a href="subscriptions.html"><i class="fas fa-file-invoice"></i> Đăng Ký</a></li>
+    
+    <li>
+        <a href="bookings.html">
+            <i class="fas fa-calendar-check"></i> Lịch Tập PT
+        </a>
+    </li>
+
+    <li>
+        <a href="schedules.html">
+            <i class="fas fa-chalkboard-teacher"></i> Lớp Học
+        </a>
+    </li>
+
+    <li><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Đăng Xuất</a></li>
+</ul>
         </nav>
     <div id="content">
         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -112,45 +123,66 @@
             } catch (error) { console.error(error); }
         }
 
-        function renderTable(bookings) {
+       function renderTable(bookings) {
             const tbody = document.getElementById('bookingTableBody');
             tbody.innerHTML = '';
             
             if (!bookings || bookings.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center">Chưa có lịch đặt nào.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted">Chưa có lịch đặt nào.</td></tr>`;
                 return;
             }
 
             bookings.forEach(bk => {
-                // Định dạng ngày giờ cho đẹp (Ví dụ: 20:00 25/12/2025)
+                // 1. Xử lý thời gian
                 const time = new Date(bk.schedule_time).toLocaleString('vi-VN');
                 
-                // Màu sắc trạng thái
+                // 2. Xử lý Trạng thái (Màu sắc)
                 let statusBadge = '';
                 let actionButtons = '';
 
                 if(bk.status === 'pending') {
                     statusBadge = '<span class="badge bg-warning text-dark">Chờ Duyệt</span>';
-                    // Nếu đang chờ, hiện nút Duyệt/Từ chối
+                    // Nút hành động
                     actionButtons = `
                         <button class="btn btn-sm btn-success" onclick="updateStatus(${bk.id}, 'confirmed')" title="Đồng ý"><i class="fas fa-check"></i></button>
                         <button class="btn btn-sm btn-danger" onclick="updateStatus(${bk.id}, 'rejected')" title="Từ chối"><i class="fas fa-times"></i></button>
                     `;
                 } else if (bk.status === 'confirmed') {
                     statusBadge = '<span class="badge bg-success">Đã Duyệt</span>';
-                    actionButtons = '<small class="text-success"><i class="fas fa-check-circle"></i> Xong</small>';
+                    actionButtons = '<span class="text-success small"><i class="fas fa-check-circle"></i> Hoàn tất</span>';
                 } else {
-                    statusBadge = '<span class="badge bg-secondary">Đã Hủy/Từ chối</span>';
-                    actionButtons = '<small class="text-muted">---</small>';
+                    statusBadge = '<span class="badge bg-secondary">Đã Hủy</span>';
+                    actionButtons = '<span class="text-muted small">---</span>';
                 }
 
+                // 3. Xử lý hiển thị PT hoặc Lớp học (QUAN TRỌNG)
+                // Nếu có schedule -> Hiển thị tên lớp
+                // Nếu không -> Hiển thị tên PT
+                let infoContent = '';
+                if (bk.schedule) {
+                    infoContent = `
+                        <span class="badge bg-danger mb-1">Lớp Nhóm</span><br>
+                        <strong>${bk.schedule.name}</strong><br>
+                        <small class="text-muted">HLV: ${bk.schedule.trainer}</small>
+                    `;
+                } else {
+                    infoContent = `
+                        <span class="badge bg-primary mb-1">Cá Nhân</span><br>
+                        <strong>${bk.pt ? bk.pt.name : '<span class="text-danger">Chưa chọn PT</span>'}</strong>
+                    `;
+                }
+
+                // 4. Render ra dòng
                 tbody.innerHTML += `
                     <tr>
-                        <td>${bk.id}</td>
-                        <td><strong>${bk.user ? bk.user.name : 'Unknown'}</strong></td>
-                        <td><span class="badge bg-info text-dark">${bk.pt ? bk.pt.name : 'Unknown'}</span></td>
+                        <td>#${bk.id}</td>
+                        <td>
+                            <div class="fw-bold">${bk.user ? bk.user.name : 'Unknown'}</div>
+                            <small class="text-muted">${bk.user ? bk.user.phone || '' : ''}</small>
+                        </td>
+                        <td>${infoContent}</td>
                         <td class="fw-bold">${time}</td>
-                        <td>${bk.note || ''}</td>
+                        <td>${bk.note || '<span class="text-muted small">Không có</span>'}</td>
                         <td>${statusBadge}</td>
                         <td>${actionButtons}</td>
                     </tr>`;

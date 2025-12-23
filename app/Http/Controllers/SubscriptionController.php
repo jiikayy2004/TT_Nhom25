@@ -55,5 +55,25 @@ class SubscriptionController extends Controller
             'message' => 'Đăng ký gói thành công!',
             'data' => $sub
         ]);
+        
+    }
+    // Xóa đơn đăng ký
+    public function destroy($id)
+    {
+        $subscription = Subscription::find($id);
+
+        if (!$subscription) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Không tìm thấy đơn đăng ký này'
+            ], 404);
+        }
+
+        $subscription->delete();
+
+        return response()->json([
+            'status' => true, 
+            'message' => 'Đã xóa đơn đăng ký thành công'
+        ]);
     }
 }

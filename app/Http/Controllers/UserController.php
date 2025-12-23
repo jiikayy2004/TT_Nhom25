@@ -48,7 +48,24 @@ class UserController extends Controller
             'data' => $user
         ]);
     }
+    // Hàm cập nhật thông tin cá nhân
+    public function updateProfile(Request $request) {
+    $user = $request->user(); // Lấy user từ token
 
+    $request->validate([
+        'name' => 'required|string',
+        'phone' => 'required|string',
+        'address' => 'nullable|string'
+    ]);
+
+    $user->update([
+        'name' => $request->name,
+        'phone' => $request->phone,
+        'address' => $request->address
+    ]);
+
+    return response()->json(['status' => true, 'message' => 'Cập nhật thành công', 'data' => $user]);
+}
     // 3. XÓA HỘI VIÊN
     public function destroy($id)
     {

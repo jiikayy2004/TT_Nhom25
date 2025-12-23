@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Subscription;
 use App\Models\Package;
+use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
@@ -39,5 +40,25 @@ class DashboardController extends Controller
                 'recent_subs' => $recentSubs
             ]
         ]);
+    }
+    // --- HÀM MỚI: LẤY CHI TIẾT DOANH THU & GÓI ---
+    public function getDetails(Request $request)
+    {
+        $type = $request->query('type');
+        $data = [];
+
+        if ($type == 'revenue') {
+            // Lấy lịch sử doanh thu
+            $data = \App\Models\Subscription::with(['user', 'package'])
+                        ->orderBy('created_at', 'desc')->get();
+        } elseif ($type == 'active_packages') {
+            // Lấy gói đang chạy
+            $today = \Carbon\Carbon::now();
+            $data = \App\Models\Subscription::with(['user', 'package'])
+                        ->where('end_date', '>=', $today)
+                        ->orderBy('end_date', 'asc')->get();
+        }
+
+        return response()->json(['status' => true, 'data' => $data]);
     }
 }

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hồ Sơ Của Tôi - GymKayy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../../styleadmin.css"> 
+    <style>
+        body { background-color: #0b0b0b; color: white; }
+        .profile-card {
+            background: #1a1a1a; border: 1px solid #333; border-radius: 15px;
+            padding: 40px; margin-top: 50px; margin-bottom: 50px;
+        }
+        .form-control {
+            background: #0f172a; border: 1px solid #334155; color: white;
+        }
+        .form-control:focus {
+            background: #0f172a; border-color: #dc3545; color: white; box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+        }
+        .form-control::placeholder { color: #64748b; }
+        .btn-update {
+            background: #dc3545; border: none; padding: 10px 30px; font-weight: bold; width: 100%; margin-top: 20px;
+        }
+        .btn-update:hover { background: #b02a37; color: white; }
+        .avatar-circle {
+            width: 100px; height: 100px; background: #dc3545; color: white;
+            font-size: 3rem; font-weight: bold; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 20px auto; border: 4px solid #1a1a1a; outline: 2px solid #dc3545;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-dark bg-dark py-3">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="../../index.html" style="font-size: 1.5rem;">
+                Gym<span class="text-danger">Kayy</span>
+            </a>
+            
+            <a href="dashboard.html" class="btn btn-outline-light btn-sm">
+                <i class="fas fa-arrow-left"></i> Quay lại Dashboard
+            </a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="profile-card">
+                    <div class="text-center">
+                        <div class="avatar-circle" id="avatarText">U</div>
+                        <h3 class="fw-bold mb-4">Hồ Sơ Cá Nhân</h3>
+                    </div>
+
+                    <form id="profileForm">
+                        <div class="mb-3">
+                            <label class="form-label">Họ và Tên</label>
+                            <input type="text" class="form-control" id="name" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Email (Tên đăng nhập)</label>
+                            <input type="email" class="form-control" id="email" readonly style="opacity: 0.6; cursor: not-allowed;">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Số điện thoại</label>
+                            <input type="text" class="form-control" id="phone" required placeholder="Nhập số điện thoại">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Địa chỉ</label>
+                            <input type="text" class="form-control" id="address" placeholder="Chưa cập nhật địa chỉ">
+                        </div>
+                        
+                        <hr class="border-secondary my-4">
+                        
+                        <div class="d-flex justify-content-between text-muted small">
+                            <span>Ngày tham gia: <span id="joinDate">...</span></span>
+                            <span>ID: <span id="userId">...</span></span>
+                        </div>
+
+                        <button type="submit" id="btnSave" class="btn btn-update">CẬP NHẬT THÔNG TIN</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost/QLPG/public/api';
+        const token = localStorage.getItem('gym_token');
+        
+        if (!token) window.location.href = '../../login.html';
+
+        // --- 1. TẢI THÔNG TIN USER ---
+        async function loadProfile() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/user`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const user = await response.json();
+
+                // Điền dữ liệu vào form
+                document.getElementById('name').value = user.name || '';
+                document.getElementById('email').value = user.email || '';
+                
+                // MỚI: Điền SĐT và Địa chỉ (Nếu null thì để rỗng)
+                document.getElementById('phone').value = user.phone || ''; 
+                document.getElementById('address').value = user.address || '';
+
+                document.getElementById('userId').innerText = '#' + user.id;
+                
+                // Format ngày
+                const date = new Date(user.created_at);
+                document.getElementById('joinDate').innerText = date.toLocaleDateString('vi-VN');
+
+                // Avatar chữ cái đầu
+                if(user.name) {
+                    document.getElementById('avatarText').innerText = user.name.charAt(0).toUpperCase();
+                }
+
+            } catch (error) {
+                console.error(error);
+                alert("Lỗi tải thông tin!");
+            }
+        }
+
+        // --- 2. XỬ LÝ NÚT CẬP NHẬT ---
+        document.getElementById('profileForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const btn = document.getElementById('btnSave');
+            btn.innerText = "Đang lưu...";
+            btn.disabled = true;
+
+            const updateData = {
+                name: document.getElementById('name').value,
+                phone: document.getElementById('phone').value,
+                address: document.getElementById('address').value
+            };
+
+            try {
+                // Gọi API cập nhật (Lưu ý: Bạn cần tạo API này ở Backend nếu chưa có)
+                const response = await fetch(`${API_BASE_URL}/user/update`, {
+                    method: 'POST', // Hoặc PUT tùy backend
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updateData)
+                });
+                
+                // Kiểm tra kết quả
+                if (response.ok) {
+                    alert("✅ Cập nhật thông tin thành công!");
+                    // Cập nhật lại tên hiển thị trong LocalStorage nếu cần
+                    const oldUser = JSON.parse(localStorage.getItem('gym_user') || '{}');
+                    oldUser.name = updateData.name;
+                    localStorage.setItem('gym_user', JSON.stringify(oldUser));
+                } else {
+                    alert("❌ Cập nhật thất bại! (Kiểm tra lại Backend)");
+                }
+
+            } catch (error) {
+                console.error(error);
+                alert("Lỗi kết nối Server!");
+            } finally {
+                btn.innerText = "CẬP NHẬT THÔNG TIN";
+                btn.disabled = false;
+            }
+        });
+
+        loadProfile();
+    </script>
+</body>
+</html>

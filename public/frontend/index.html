@@ -7,10 +7,112 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="./assets/css/style.css">
+    
+    <style>
+        /* --- CSS DARK MODE - LAYOUT 2 CỘT (PREMIUM vs STANDARD) --- */
+        .package-section { 
+            padding: 80px 0; 
+            background-color: #0b0b0b; /* Nền đen sâu */
+        }
+        
+        /* Cấu trúc chung của Card */
+        .package-card {
+            border-radius: 20px;
+            padding: 40px 30px; 
+            text-align: center; 
+            transition: all 0.3s ease;
+            height: 100%; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* --- STYLE 1: GÓI PREMIUM (Gói đầu tiên - Màu Đỏ) --- */
+        .card-premium {
+            background: linear-gradient(135deg, #dc3545 0%, #a71d2a 100%); /* Gradient đỏ */
+            border: none;
+            box-shadow: 0 10px 40px rgba(220, 53, 69, 0.4);
+            transform: scale(1.02); /* To hơn một chút để nổi bật */
+        }
+        .card-premium .package-name, 
+        .card-premium .package-price, 
+        .card-premium .package-sub,
+        .card-premium i {
+            color: #ffffff !important; /* Chữ trắng hết */
+        }
+        .card-premium .btn-join {
+            background: #ffffff;
+            color: #dc3545;
+            border: none;
+        }
+        .card-premium .btn-join:hover {
+            background: #f8f9fa;
+            color: #b02a37;
+        }
+        .card-premium .package-features {
+            border-top: 1px solid rgba(255,255,255,0.3);
+            color: #f8f9fa;
+        }
+
+        /* --- STYLE 2: GÓI STANDARD (Gói thứ hai - Màu Đen) --- */
+        .card-standard {
+            background: #151515;
+            border: 2px solid #333;
+        }
+        .card-standard:hover {
+            border-color: #dc3545;
+            transform: translateY(-5px);
+        }
+        .card-standard .package-name { color: #fff; }
+        .card-standard .package-price { color: #dc3545; }
+        .card-standard .package-sub { color: #9ca3af; }
+        .card-standard .btn-join {
+            background: transparent;
+            border: 2px solid #dc3545;
+            color: #fff;
+        }
+        .card-standard .btn-join:hover {
+            background: #dc3545;
+            color: #fff;
+        }
+        .card-standard .package-features {
+            border-top: 1px solid #333;
+            color: #d1d5db;
+        }
+        .card-standard i { color: #dc3545; }
+
+        /* TYPOGRAPHY CHUNG */
+        .package-name { 
+            font-size: 2rem; font-weight: 800; text-transform: uppercase; margin-bottom: 5px; 
+        }
+        .package-sub { font-size: 0.95rem; margin-bottom: 25px; }
+        .package-price { 
+            font-size: 3.5rem; font-weight: 900; margin-bottom: 20px; line-height: 1; font-family: 'Poppins', sans-serif;
+        }
+        .package-price span { font-size: 1.2rem; font-weight: 500; opacity: 0.8; }
+        
+        .btn-join {
+            padding: 15px 30px; border-radius: 50px; font-weight: 700; width: 100%; 
+            text-transform: uppercase; margin-bottom: 25px; transition: 0.3s; cursor: pointer;
+            text-decoration: none; display: inline-block;
+        }
+
+        .package-features { list-style: none; padding: 0; text-align: left; margin-top: auto; padding-top: 25px; }
+        .package-features li { margin-bottom: 15px; display: flex; align-items: center; font-size: 1rem; }
+        .package-features i { margin-right: 12px; font-size: 1.1rem; }
+        
+        .link-detail {
+            color: inherit; text-decoration: none; font-weight: 600; opacity: 0.8; transition: 0.3s;
+        }
+        .link-detail:hover { opacity: 1; text-decoration: underline; color: inherit;}
+    </style>
 </head>
 <body>
-    <!-- HEADER -->
     <header>
         <nav>
             <a href="index.html" class="logo">
@@ -20,12 +122,21 @@
 
             <ul class="nav-menu">
                 <li><a href="index.html" class="active">Trang chủ</a></li>
-                <li><a href="#packages">Gói tập</a></li>
-                <li><a href="#promotions">Khuyến mãi</a></li>
-                
+                <li><a href="kien-thuc.html" class="active" >Kiến thức tập luyện</a></li>
+                <li><a href="promotions.html">Khuyến mãi <span style="font-size: 10px; background: #dc3545; padding: 2px 5px; border-radius: 4px; vertical-align: top;">HOT</span></a></li>
                 <li id="menu-my-package" style="display: none;">
                     <a href="pages/member/dashboard.html" >
                         <i class="fas fa-crown"></i> Gói Tập Của Tôi
+                    </a>
+                </li>
+                <li id="menu-schedule" style="display: none;">
+                    <a href="pages/member/schedule.html">
+                        <i class="fas fa-calendar-days"></i> Lịch tập
+                    </a>
+                </li>
+                <li id="menu-profile" style="display: none;">
+                    <a href="pages/member/profile.html">
+                        <i class="fas fa-user-circle"></i> Tôi
                     </a>
                 </li>
             </ul>
@@ -36,7 +147,6 @@
         </nav>
     </header>
 
-    <!-- HERO SECTION -->
     <section class="hero">
         <div class="hero-container">
             <div class="hero-content">
@@ -87,7 +197,24 @@
         </div>
     </section>
 
-    <!-- ===== FOOTER ===== -->
+    <section class="package-section">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 style="color: #fff; font-weight: 900; font-size: 2.5rem; text-transform: uppercase;">
+                    Hội Viên <span style="color: #dc3545;">GymKayy</span>
+                </h2>
+                <p style="color: #9ca3af;">Chọn gói tập phù hợp với mục tiêu của bạn</p>
+            </div>
+
+            <div class="row g-4 justify-content-center" id="homePackageList">
+                <div class="col-12 text-center text-white">
+                    <div class="spinner-border text-danger" role="status"></div>
+                    <p class="mt-2">Đang tải bảng giá...</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <footer>
         <div class="footer-content">
             <div class="footer-brand">
@@ -138,22 +265,28 @@
             </div>
         </div>
     </footer>
+
     <script>
     document.addEventListener("DOMContentLoaded", function() {
-        // 1. Kiểm tra xem đã đăng nhập chưa
+        // 1. Kiểm tra Login
         const token = localStorage.getItem('gym_token');
         const userStr = localStorage.getItem('gym_user');
         
         if (token && userStr) {
             const user = JSON.parse(userStr);
-
-            // --- TRƯỜNG HỢP ĐÃ ĐĂNG NHẬP ---
-            
-            // A. Hiện menu "Gói tập của tôi"
+            // 1. Hiện menu "Gói tập"
             const menuPackage = document.getElementById('menu-my-package');
             if(menuPackage) menuPackage.style.display = 'block';
 
-            // B. Thay nút "Đăng nhập" thành "Xin chào..." + "Đăng xuất"
+            // 2. Hiện menu "Lịch tập" (CODE MỚI THÊM)
+            const menuSchedule = document.getElementById('menu-schedule');
+            if(menuSchedule) menuSchedule.style.display = 'block';
+
+            // 3. Hiện menu "Tôi"
+            const menuProfile = document.getElementById('menu-profile');
+            if(menuProfile) menuProfile.style.display = 'block';
+
+            // C. Thay nút "Đăng nhập" thành "Xin chào..."
             const authSection = document.getElementById('auth-section');
             if(authSection) {
                 authSection.innerHTML = `
@@ -173,9 +306,87 @@
         if(confirm("Bạn muốn đăng xuất?")) {
             localStorage.removeItem('gym_token');
             localStorage.removeItem('gym_user');
-            window.location.reload(); // Tải lại trang để về giao diện chưa đăng nhập
+            window.location.reload(); 
         }
     }
-</script>
 
-    
+    // Cấu hình URL API
+    const API_BASE_URL = 'http://localhost/QLPG/public/api';
+
+    // Hàm tải gói tập (Layout 2 cột Đỏ - Đen)
+    async function loadPackagesHome() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/packages`);
+            const result = await response.json();
+
+            const container = document.getElementById('homePackageList');
+            container.innerHTML = ''; 
+
+            if (result.status && result.data.length > 0) {
+                // CHỈ LẤY 2 GÓI ĐẦU TIÊN
+                const packagesToShow = result.data.slice(0, 2);
+
+                packagesToShow.forEach((pkg, index) => {
+                    const price = new Intl.NumberFormat('vi-VN').format(pkg.price);
+                    
+                    // Xử lý hiển thị tháng/ngày
+                    let durationText = pkg.duration_days >= 30 
+                        ? `/ ${Math.round(pkg.duration_days / 30)} Tháng` 
+                        : `/ ${pkg.duration_days} Ngày`;
+
+                    // GÓI 1: Premium (Đỏ), GÓI 2: Standard (Đen)
+                    const cardClass = index === 0 ? 'card-premium' : 'card-standard';
+                    const subTitle = index === 0 
+                        ? 'Tập luyện không giới hạn toàn hệ thống' 
+                        : 'Gói tập cơ bản tiết kiệm';
+                    const extraFeature = index === 0 
+                        ? '<li><i class="fas fa-check-circle"></i> <b>Tặng 1 buổi PT định hướng</b></li>' 
+                        : '';
+
+                    container.innerHTML += `
+                        <div class="col-lg-5 col-md-6">
+                            <div class="package-card ${cardClass}">
+                                <div>
+                                    <h3 class="package-name">${pkg.name}</h3>
+                                    <div class="package-sub">${subTitle}</div>
+                                    
+                                    <div class="package-price">
+                                        ${price} <span>${durationText}</span>
+                                    </div>
+
+                                    <a href="register.html" class="btn btn-join">
+                                        Tham gia gói <i class="fas fa-arrow-right"></i>
+                                    </a>
+
+                                    <ul class="package-features">
+                                        <li><i class="fas fa-check-circle"></i> Tập luyện tại tất cả chi nhánh</li>
+                                        <li><i class="fas fa-check-circle"></i> Check-in FaceID hiện đại</li>
+                                        <li><i class="fas fa-check-circle"></i> Miễn phí tủ đồ E-Locker</li>
+                                        ${extraFeature}
+                                    </ul>
+                                </div>
+                                
+                                <div style="margin-top: 20px; font-size: 0.9rem;">
+                                    <a href="#" class="link-detail">
+                                        Xem chi tiết <i class="fas fa-angle-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                container.innerHTML = '<p class="text-white text-center">Chưa có gói tập nào.</p>';
+            }
+        } catch (error) {
+            console.error(error);
+            document.getElementById('homePackageList').innerHTML = '<p class="text-danger text-center">Lỗi kết nối Server!</p>';
+        }
+    }
+
+    // Chạy ngay khi tải trang
+    loadPackagesHome();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
